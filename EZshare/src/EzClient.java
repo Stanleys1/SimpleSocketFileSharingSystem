@@ -2,9 +2,7 @@ import org.apache.commons.cli.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.Socket;
 import java.rmi.UnknownHostException;
 import java.util.ArrayList;
@@ -24,8 +22,9 @@ public class EzClient {
 	private int port;
 	private boolean query_relay= false;
 	
-	public EzClient(String[] args)throws NullPointerException, IOException{
+	public EzClient(String[] args,boolean query)throws NullPointerException, IOException{
 		this.args = args; 
+		this.query_relay = query;
 		this.options = generateOptions();
 	}
 	
@@ -42,7 +41,7 @@ public class EzClient {
 		}
 		
 		try{
-			EzClient client = new EzClient(args);
+			EzClient client = new EzClient(args,true);
 			client.set_query_relay(true);
 			String response =client.run();
 			System.out.println("response from server = "+response);

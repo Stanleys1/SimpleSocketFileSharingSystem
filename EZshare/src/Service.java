@@ -495,7 +495,7 @@ public class Service extends Thread{
 					
 					System.out.println("relay to with args"+ b.toString());
 					try{
-						EzClient c = new EzClient(b.toString().split(" "));
+						EzClient c = new EzClient(b.toString().split(" "),false);
 						String serverResponse =c.run();
 						String[] serverRes= serverResponse.split("\n");
 						for(int k = 1 ; k<serverRes.length-1;k++){
