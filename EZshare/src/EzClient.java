@@ -42,7 +42,6 @@ public class EzClient {
 		
 		try{
 			EzClient client = new EzClient(args,true);
-			client.set_query_relay(true);
 			String response =client.run();
 			System.out.println("response from server = "+response);
 		}catch(NullPointerException e){
@@ -56,9 +55,6 @@ public class EzClient {
 		
 	}
 	
-	public void set_query_relay(boolean relay){
-		this.query_relay = relay;
-	}
 	
 	private Options generateOptions(){
 		ArrayList<Option> op= new ArrayList<Option>();
