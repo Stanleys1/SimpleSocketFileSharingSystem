@@ -10,7 +10,7 @@ import java.rmi.UnknownHostException;
 import java.util.ArrayList;
 
 import org.json.simple.*;
-
+//test
 //ARGUMENTS:
 //-port 1000 connect to server at port 1000 (NEEDED TO RUN)
 //-host localhost connect to server name provided(NEEDED TO RUN)
