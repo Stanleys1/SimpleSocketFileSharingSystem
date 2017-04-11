@@ -42,7 +42,6 @@ public class EzClient {
 		
 		try{
 			EzClient client = new EzClient(args,true);
-			client.set_query_relay(true);
 			String response =client.run();
 			System.out.println("response from server = "+response);
 		}catch(NullPointerException e){
@@ -56,9 +55,6 @@ public class EzClient {
 		
 	}
 	
-	public void set_query_relay(boolean relay){
-		this.query_relay = relay;
-	}
 	
 	private Options generateOptions(){
 		ArrayList<Option> op= new ArrayList<Option>();
@@ -356,10 +352,10 @@ public class EzClient {
      */
 	private boolean check_servers_invalidity(String servers) {
 		// TODO Auto-generated method stub
-		String [] serversArray=servers.split(",");
-		if(serversArray.length!=2){
+		if(servers.length()==0){
 			return false;
 		}
+		String [] serversArray=servers.split(",");
 		for(int i=0;i<serversArray.length;i++){
 			String [] server=serversArray[i].split(":");
 			if(server.length != 2 ){
