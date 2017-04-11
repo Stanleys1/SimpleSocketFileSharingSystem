@@ -1,7 +1,9 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import org.apache.commons.cli.ParseException;
@@ -471,6 +473,7 @@ public class Service extends Thread{
 				if(!duplicate && !isThisServer){
 					records.add(serverlist[i]);
 				}
+				System.out.println(serverlist[i]);
 			}
 			return generate_success_message();
 		}
@@ -606,6 +609,21 @@ public class Service extends Thread{
 					long port = (long) host.get("port");
 					System.out.println("hostname: "+hostname+"port: "+port);
 					StringBuilder b = new StringBuilder();
+					
+					/*
+					 * if localhost, change hostname to ip address
+					 */
+					try {
+					if(hostname.equals("localhost")) {
+						InetAddress host2 = InetAddress.getLocalHost();
+						hostname = host2.getHostAddress();
+					} }
+					catch(UnknownHostException e){
+						System.out.println("can't identify host name");
+						e.printStackTrace();
+						System.exit(0);
+					}
+					
 					b.append(hostname);
 					b.append(":");
 					b.append(port);
