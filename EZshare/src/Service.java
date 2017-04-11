@@ -339,9 +339,7 @@ public class Service extends Thread{
 			
 		}
 		
-		private String meaningless() {
-			return "meaningless";
-		}
+		
 		/*
 		 * publish command has three possible choices
 		 * 1.resource is new, just add it into server resources
