@@ -352,10 +352,10 @@ public class EzClient {
      */
 	private boolean check_servers_invalidity(String servers) {
 		// TODO Auto-generated method stub
-		String [] serversArray=servers.split(",");
-		if(serversArray.length!=2){
+		if(servers.length()==0){
 			return false;
 		}
+		String [] serversArray=servers.split(",");
 		for(int i=0;i<serversArray.length;i++){
 			String [] server=serversArray[i].split(":");
 			if(server.length != 2 ){
