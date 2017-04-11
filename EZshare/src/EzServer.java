@@ -119,6 +119,9 @@ public class EzServer implements Runnable {
 		return this.port;
 	}
 	
+	public String getSecret() {
+		return this.secret;
+	}
 	
 	
 	private String generate_random_secret(){

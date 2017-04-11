@@ -213,8 +213,14 @@ public class Service extends Thread{
 					return generate_error_message("invalid resource");
 				}
 				
+				// check if secret value is given
 				secret =(String)obj.get("secret");
 				if(secret.equals("")){
+					return generate_error_message("missing resource and/or secret");
+				}
+				
+				// check if secret value is same as server secret
+				if(!secret.equals(server.getSecret())){
 					return generate_error_message("incorrect secret");
 				}
 				
@@ -322,7 +328,7 @@ public class Service extends Thread{
 					return generate_error_message("invalid File");
 				}
 				
-				rcsTemplate.put("resourceSize", "");
+				//rcsTemplate.put("resourceSize", "");
 				System.out.println(rcsTemplate.toJSONString());
 				message = fetch();
 				return message;
@@ -387,10 +393,38 @@ public class Service extends Thread{
 			}
 			return true;
 		}
+		
+		/*
+		 * Rules applied are same as Publish
+		 * Additional rules: secret, file scheme    
+		 */
 
 		private String share(){
 			
-			return "share";
+			Resource share_resource=new Resource(name, tagsString, description,
+					 uri,  channel, owner, ezserver);
+			boolean hasShared=false;
+			for (int i=0;i<server.getResource().size();i++){
+				if(hasShared){
+					break;
+				}
+				
+				// same resource with different owners is not allowed to share
+				if(!publish_notAllowed(server.getResource().get(i), uri,owner,channel)){
+					return generate_error_message( "cannot share resource"); 
+				}
+				if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
+					server.getResource().set(i, share_resource); // overwrite
+					hasShared=true;
+				}
+			}
+			//new resource is added into server resourceArray
+			if(!hasShared){
+				server.getResource().add(share_resource);
+			}
+			return generate_success_message();
+			
+			//return "share";
 		}
 		/*
 		 * remove command has two possible choices
@@ -443,10 +477,43 @@ public class Service extends Thread{
 			return generate_success_message();
 		}
 		
-		
+		/*
+		 * Using the same technique as Query
+		 * Additional things: put resourceSize
+		 */
 		private String fetch(){
 			
-			return "fetch";
+			int resultSize = 0;
+			JSONObject response = new JSONObject();
+			StringBuilder fetchMessage = new StringBuilder();
+			JSONObject resource;
+			ArrayList<Resource> resources = server.getResource();
+			
+			Resource template=new Resource(name, tagsString, description,
+					 uri,  channel, owner, ezserver);
+			
+			for(int i = 0 ; i< resources.size();i++){
+				if(resources.get(i).match_template(template)){
+					resource = resources.get(i).getResourceWithServer
+							(server.getHostName(),server.getPort()).getJSON();
+					
+					response.put("response", "success");
+					fetchMessage.append(response.toJSONString()+"\n");
+					resource.put("resourceSize", HelperFunction.fileSize(uri));
+					fetchMessage.append(resource+"\n");
+					resultSize ++;
+					
+				}
+			}
+			
+			JSONObject result = new JSONObject();
+			
+			result.put("resultSize", resultSize);
+			fetchMessage.append(result.toJSONString());
+			
+			return fetchMessage.toString();
+			
+			
 		}
 		private String query(boolean relay){
 			int resultSize = 0;

@@ -54,6 +54,22 @@ public class HelperFunction {
 		}
 	}
 	
+	public static long fileSize(String s){
+		try {
+			URI u = new URI(s);
+			//boolean isWeb = "http".equalsIgnoreCase(u.getScheme())
+			   // || "https".equalsIgnoreCase(u.getScheme());
+			File file = new File(u); 
+			return file.length();
+			
+			//return !isWeb;
+		} catch (URISyntaxException e) {
+			return 0;
+		}
+		
+		
+	}
+	
 	/**
 	 * all string must pass through this function
 	 * @param s string
