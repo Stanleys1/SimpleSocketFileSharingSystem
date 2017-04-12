@@ -96,100 +96,7 @@ public class Service extends Thread{
 			}catch(ClassCastException e){
 				return generate_error_message("missing command");
 			}
-			
-			//secret = (String) obj.get("secret");
-			
-			
-			//need error check here
-			//if the object.get(resource) is not a jsonObject
-			
-			/*try {
-				sl = new JSONArray();
-				sl = (JSONArray)obj.get("serverList");
-			} finally {
-				message = meaningless();
-			}
-			
-			//sl = new JSONArray();
-			//sl = (JSONArray)obj.get("serverList");
-			
-			try {
-				rt = (JSONObject)obj.get("resourceTemplate");
-			} finally {
-				message = meaningless();
-			}
-			
-			//rt = (JSONObject)obj.get("resourceTemplate");
-				
-			try {
-				rcs = (JSONObject)obj.get("resource");
-				/*uri = (String) rcs.get("uri");
-				System.out.println("uri = " + uri);
-				name= (String) rcs.get("name");
-				System.out.println("name = "+name);
-				
-				
-				
-				description = (String) rcs.get("description");
-				channel = (String) rcs.get("channel");
-				
-				owner = (String) rcs.get("owner");
-				System.out.println("owner = "+owner);
-				
-				ezserver = (String) rcs.get("ezserver");*/
-			/*} finally {
-				message = meaningless();
-			}
-			
-			/*rcs = (JSONObject)obj.get("resource");*/
-			
-			/*uri = (String) rcs.get("uri");
-			System.out.println("uri = " + uri);
-			name= (String) rcs.get("name");
-			System.out.println("name = "+name);
-			
-			//tags = (String) rcs.get("tags");
-			//System.out.println("tags = "+tags);
-			
-			description = (String) rcs.get("description");
-			channel = (String) rcs.get("channel");
-			
-			owner = (String) rcs.get("owner");
-			System.out.println("owner = "+owner);
-			
-			ezserver = (String) rcs.get("ezserver"); 
-			
-			
 			/*
-			 * Stanley
-			 * you need to pass it on to the functions
-			 * like the one below
-			 * each function will return a string that is the output message to the client
-			 * and do error checking
-			 */
-			if(command.equals("PUBLISH")){
-				
-				try{
-					rcs = (JSONObject)obj.get("resource");
-					System.out.println(rcs.toJSONString());
-				}catch(NullPointerException e){
-					return generate_error_message("missing resource");
-				}catch(ClassCastException e){
-					return generate_error_message("missing resource");
-				}
-				if(!getResource(rcs)){
-					return generate_error_message("invalid resource");
-				}
-				if(!HelperFunction.isURI(uri)){
-					return generate_error_message("invalid resource");
-				}
-				if(owner.equals("*")){
-					return generate_error_message("invalid resource");
-				}
-				message = publish();
-				return message;
-			}
-			
 			if(command.equals("SHARE")){
 				
 				try{
@@ -229,6 +136,7 @@ public class Service extends Thread{
 				message = share();
 				return message;
 			}
+			*/
 			
 			/* need to compare with the resources
 			 * on server
@@ -280,14 +188,7 @@ public class Service extends Thread{
 				return message;
 				
 			}
-			
-			/* need to compare with the resources
-			 * on server
-			 * 
-			 * 
-			 */
-			if(command.equals("REMOVE")){   
-				
+			if(command.equals("REMOVE")||command.equals("PUBLISH")||command.equals("SHARE")){
 				try{
 					rcs = (JSONObject)obj.get("resource");
 					System.out.println(rcs.toJSONString());
@@ -296,17 +197,42 @@ public class Service extends Thread{
 				}catch(ClassCastException e){
 					return generate_error_message("missing resource");
 				}
-				
-				
-				if(!getResource(rcs)){
+				//URI must be absolute,owner cannot be * and correct resource field
+				if(!getResource(rcs)||owner.equals("*")){
 					return generate_error_message("invalid resource");
 				}
-				
-				
-				message = remove();
+				switch (command){
+				case "REMOVE":
+					if(!HelperFunction.isURI(uri)){
+						return generate_error_message("invalid resource");
+					}
+					message = remove();
+					break;
+				case "PUBLISH":
+					if(!HelperFunction.isURI(uri)){
+						return generate_error_message("invalid resource");
+					}
+					message = publish();
+					break;
+				case "SHARE":
+					if(!HelperFunction.isFileScheme(uri)){
+						return generate_error_message("invalid resource");
+					}
+					// check if secret value is given
+					secret =(String)obj.get("secret");
+					if(secret.equals("")){
+						return generate_error_message("missing resource and/or secret");
+					}		
+					// check if secret value is same as server secret
+					if(!secret.equals(server.getSecret())){
+						return generate_error_message("incorrect secret");
+					}
+					message = share();
+					break;
+				default: break;
+				}
 				return message;
 			}
-			
 			if(command.equals("FETCH")){
 				try{
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
@@ -400,6 +326,7 @@ public class Service extends Thread{
 		 */
 
 		private String share(){
+			JSONObject obj;
 			
 			Resource share_resource=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
@@ -615,8 +542,11 @@ public class Service extends Thread{
 					 */
 					try {
 					if(hostname.equals("localhost")) {
+						System.out.println("localhost");
 						InetAddress host2 = InetAddress.getLocalHost();
+						System.out.println(host2);
 						hostname = host2.getHostAddress();
+						System.out.println("localhost finish");
 					} }
 					catch(UnknownHostException e){
 						System.out.println("can't identify host name");
