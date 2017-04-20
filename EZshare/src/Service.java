@@ -48,12 +48,14 @@ public class Service extends Thread{
 			in = new DataInputStream(clientSocket.getInputStream());
 			out = new DataOutputStream(clientSocket.getOutputStream());
 			String input = in.readUTF();
-			System.out.println(input);
+			if(debug){
+				System.out.println(input);
+			}
 			
 			String output = JSONOperator(input);
-			
-			//Jason
-			System.out.println("testing"+output);
+			if(debug){
+				System.out.println(output);
+			}
 			
 			out.writeUTF(output);
 			in.close();
@@ -90,7 +92,6 @@ public class Service extends Thread{
 			obj = (JSONObject)parser.parse(js);
 			try{
 				command =(String)obj.get("command");
-				System.out.println("command = "+command);
 			}catch(NullPointerException e){
 				return generate_error_message("missing command");
 			}catch(ClassCastException e){
@@ -146,9 +147,9 @@ public class Service extends Thread{
 				boolean relay = false;
 				try{
 					relay = (boolean)obj.get("relay");
-					System.out.println("relay  = "+ relay);
+					//System.out.println("relay  = "+ relay);
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
-					System.out.println(rcsTemplate.toJSONString());
+					//System.out.println(rcsTemplate.toJSONString());
 				}catch(NullPointerException e){
 					return generate_error_message("missing resourceTemplate");
 				}catch(ClassCastException e){
@@ -171,7 +172,7 @@ public class Service extends Thread{
 				sl = new JSONArray();
 				try{
 					sl = (JSONArray)obj.get("serverList");
-					System.out.println(sl.toJSONString());
+					//System.out.println(sl.toJSONString());
 				}catch(NullPointerException e){
 					return generate_error_message("missing or invalid server list");
 				}catch(ClassCastException e){
@@ -191,7 +192,7 @@ public class Service extends Thread{
 			if(command.equals("REMOVE")||command.equals("PUBLISH")||command.equals("SHARE")){
 				try{
 					rcs = (JSONObject)obj.get("resource");
-					System.out.println(rcs.toJSONString());
+					//System.out.println(rcs.toJSONString());
 				}catch(NullPointerException e){
 					return generate_error_message("missing resource");
 				}catch(ClassCastException e){
@@ -236,7 +237,7 @@ public class Service extends Thread{
 			if(command.equals("FETCH")){
 				try{
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
-					System.out.println(rcsTemplate.toJSONString());
+					//System.out.println(rcsTemplate.toJSONString());
 				}catch(NullPointerException e){
 					return generate_error_message("missing resourceTemplate");
 				}catch(ClassCastException e){
@@ -257,7 +258,7 @@ public class Service extends Thread{
 				}
 				
 				//rcsTemplate.put("resourceSize", "");
-				System.out.println(rcsTemplate.toJSONString());
+				//System.out.println(rcsTemplate.toJSONString());
 				message = fetch();
 				return message;
 				
@@ -300,7 +301,6 @@ public class Service extends Thread{
 		 * same uri,channel and owner, need to override such resource
 		 */
 		private boolean samePrimaryKey(Resource resource, String uri, String owner, String channel) {
-			// TODO Auto-generated method stub
 			if(resource.getUri().equals(uri)&&resource.getChannel().equals(channel)
 					&&resource.getOwner().equals(owner)){
 				return true;
@@ -312,7 +312,7 @@ public class Service extends Thread{
 		 * same uri and channel but different owner is not allowed 
 		 */
 		private boolean publish_notAllowed(Resource resource, String uri, String owner, String channel) {
-			// TODO Auto-generated method stub
+			
 			if(resource.getUri().equals(uri)&&resource.getChannel().equals(channel)
 					&&!resource.getOwner().equals(owner)){
 				return false;
@@ -382,6 +382,7 @@ public class Service extends Thread{
 			boolean duplicate = false;
 			boolean isThisServer = false;
 			String currentServer = server.getHostName()+":"+server.getPort();
+			String currentServer2 = "localhost"+":"+server.getPort();
 			String currentServerIP = server.getHostIP()+":"+server.getPort();
 			for( int i = 0 ;i < serverlist.length;i++){
 				duplicate = false;
@@ -394,13 +395,16 @@ public class Service extends Thread{
 				if(currentServer.equals(serverlist[i])){
 					isThisServer = true;
 				}
+				if(currentServer2.equals(serverlist[i])){
+					isThisServer = true;
+				}
 				if(currentServerIP.equals(serverlist[i])){
 					isThisServer = true;
 				}
 				if(!duplicate && !isThisServer){
 					records.add(serverlist[i]);
 				}
-				System.out.println(serverlist[i]);
+				//System.out.println(serverlist[i]);
 			}
 			return generate_success_message();
 		}
@@ -488,7 +492,7 @@ public class Service extends Thread{
 						}
 					}
 					
-					System.out.println("relay to with args"+ b.toString());
+					//System.out.println("relay to with args"+ b.toString());
 					try{
 						EzClient c = new EzClient(b.toString().split(" "),false);
 						String serverResponse =c.run();
@@ -534,7 +538,7 @@ public class Service extends Thread{
 					JSONObject host = (JSONObject) sl.get(i);    // need to change, cannot identify
 					String hostname = (String) host.get("hostname");
 					long port = (long) host.get("port");
-					System.out.println("hostname: "+hostname+"port: "+port);
+					//System.out.println("hostname: "+hostname+"port: "+port);
 					StringBuilder b = new StringBuilder();
 					
 					/*
@@ -542,11 +546,11 @@ public class Service extends Thread{
 					 */
 					try {
 					if(hostname.equals("localhost")) {
-						System.out.println("localhost");
+						//System.out.println("localhost");
 						InetAddress host2 = InetAddress.getLocalHost();
-						System.out.println(host2);
+						//System.out.println(host2);
 						hostname = host2.getHostAddress();
-						System.out.println("localhost finish");
+						//System.out.println("localhost finish");
 					} }
 					catch(UnknownHostException e){
 						System.out.println("can't identify host name");

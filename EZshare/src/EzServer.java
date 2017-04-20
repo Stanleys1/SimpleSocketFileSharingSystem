@@ -1,6 +1,4 @@
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -10,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import javax.net.ServerSocketFactory;
 
 import org.apache.commons.cli.CommandLine;
@@ -19,9 +16,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.UnrecognizedOptionException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 
 
@@ -198,7 +192,6 @@ public class EzServer implements Runnable {
 			}
 			if(cmd.hasOption("advertisedhostname")){
 				//TODO
-				//Change the advertised host name
 			}
 			
 			
@@ -282,9 +275,9 @@ public class EzServer implements Runnable {
 					b.append(",");
 					b.append(records.get(i));
 				}
-				System.out.println(b.toString());
+				//System.out.println(b.toString());
 				String argument = "-exchange -port "+addr[1]+" -host "+addr[0]+" -debug "+"-servers "+b;
-				System.out.println(argument);
+				//System.out.println(argument);
 				String[] arguments = argument.split(" ");
 				try{
 					EzClient c = new EzClient (arguments,false);
