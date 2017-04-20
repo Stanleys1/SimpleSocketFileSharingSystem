@@ -43,6 +43,7 @@ public class EzServer implements Runnable {
 	private Options options;
 	private boolean debug = false;
 	private String[] args;
+	private ArrayList<String> blockedIP;
 	
 	public static void main (String[] args){
 		//args must be present
@@ -64,6 +65,7 @@ public class EzServer implements Runnable {
 		resources = new ArrayList<Resource>();
 		this.args = args;
 		serverRecords = new ArrayList<String> ();
+		blockedIP = new ArrayList<String>();
 		
 		//For testing purposes
 		//serverRecords.add("localhost:8000");
@@ -224,19 +226,34 @@ public class EzServer implements Runnable {
 			
 			System.out.println("Server connected on port " + listen.getLocalPort());
 			int numberOfThreads = 0;
-		    
-			
+			boolean blocked = false;
 			while(true){
 				System.out.println("listening for connection");
 				Socket clientSocket = listen.accept();
-				numberOfThreads ++;
+				blocked = false;
 				
-				System.out.println("threads +"+ numberOfThreads+"created");
+				String incomingIP = clientSocket.getInetAddress().toString();
+				System.out.println(incomingIP);
+				for(int i = 0 ; i<this.blockedIP.size(); i++){
+					if(this.blockedIP.get(i).equals(incomingIP)){
+						blocked = true;
+					}
+				}
 				
-				Service s = new Service(clientSocket,this,debug);
-				//TODO
-				//DO INTERVAL CONNECTION STUFF
+				if(blocked){
+					clientSocket.close();
+				}else{
+					numberOfThreads ++;
 				
+					System.out.println("threads +"+ numberOfThreads+"created");
+					
+					this.blockedIP.add(incomingIP);
+					
+					Timer t = new Timer();
+					t.schedule(new IPTimer(incomingIP,this.blockedIP), this.intervaltime*1000);
+				
+					Service s = new Service(clientSocket,this,debug);
+				}
 				
 				
 			}
@@ -324,6 +341,27 @@ public class EzServer implements Runnable {
 		
 	}
 	
+	
+	class IPTimer extends TimerTask{
+		
+		private ArrayList<String> blockedIp;
+		private String ip;
+		
+		public IPTimer(String ip, ArrayList<String> blockedIP){
+			this.ip = ip;
+			this.blockedIp = blockedIP;
+		}
+
+		@Override
+		public void run() {
+			for(int i = 0 ; i < blockedIp.size(); i++){
+				if(blockedIp.get(i).equals(ip)){
+					blockedIp.remove(i);
+				}
+			}
+		}
+		
+	}
 	
 	
 	
