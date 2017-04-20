@@ -279,22 +279,34 @@ public class Service extends Thread{
 			Resource publish_resource=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
 			boolean hasPublished=false;
-			for (int i=0;i<server.getResource().size();i++){
-				if(hasPublished){
-					break;
+			//get a synchronize lock
+			synchronized(server){
+				for (int i=0;i<server.getResource().size();i++){
+					if(hasPublished){
+						break;
+					}
+					if(!publish_notAllowed(server.getResource().get(i), uri,owner,channel)){
+						return generate_error_message( "cannot publish resource");
+					}
+					if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
+						server.getResource().set(i, publish_resource);
+						hasPublished=true;
+					}
 				}
-				if(!publish_notAllowed(server.getResource().get(i), uri,owner,channel)){
-					return generate_error_message( "cannot publish resource");
+				if(!hasPublished){
+					server.getResource().add(publish_resource);
 				}
-				if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
-					server.getResource().set(i, publish_resource);
-					hasPublished=true;
+				//sleep several seconds
+				try{
+					//test 
+					System.out.println("100s cannot operate server");
+					sleep(100000);
+				}catch(InterruptedException e){
+					e.printStackTrace();
 				}
+				
 			}
 			//new resource is added into server resourceArray
-			if(!hasPublished){
-				server.getResource().add(publish_resource);
-			}
 			return generate_success_message();
 		}
 		/*
@@ -364,17 +376,20 @@ public class Service extends Thread{
 					 uri,  channel, owner, ezserver);
 			boolean resource_need_Removed=false;
 			int index_remove=0;
-			for (int i=0;i<server.getResource().size();i++){
-				if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
-					index_remove=i;
-					resource_need_Removed=true;
-					break;
+			synchronized(server){
+				for (int i=0;i<server.getResource().size();i++){
+					if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
+						index_remove=i;
+						resource_need_Removed=true;
+						break;
+					}
 				}
+				if(!resource_need_Removed){
+					return generate_error_message( "cannot remove resource");
+				}
+				server.getResource().remove(index_remove);
 			}
-			if(!resource_need_Removed){
-				return generate_error_message( "cannot remove resource");
-			}
-			server.getResource().remove(index_remove);
+			
 			return generate_success_message();
 		}
 		private String exchange(String[] serverlist){
