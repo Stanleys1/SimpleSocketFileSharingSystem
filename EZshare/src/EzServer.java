@@ -32,7 +32,9 @@ import org.apache.commons.cli.ParseException;
 public class EzServer implements Runnable {
 	private ArrayList<String> serverRecords;
 	public static final int DEFAULTTIME = 600000;
+	public static final int DEFAULTINTERVAL = 1;
 	private int exchangetime;
+	private int intervaltime;
 	private ArrayList<Resource> resources;
 	private Timer timer;
 	private int port;
@@ -187,9 +189,19 @@ public class EzServer implements Runnable {
 			System.out.println("this server secret = " + this.secret);
 			
 			if(cmd.hasOption("connectionintervallimit")){
-				//TODO
-				//ConnectionInterval limit
+				String buffer =  cmd.getOptionValue("connectionintervallimit");
+				if(HelperFunction.IsInteger(buffer)){
+					this.intervaltime = Integer.parseInt(buffer);
+				}
+				else{
+					System.out.println("interval time not an integer, using default time");
+					this.intervaltime = DEFAULTINTERVAL;
+				}
+			}else{
+				this.intervaltime = DEFAULTINTERVAL;
 			}
+			
+			System.out.println("connectionintervallimit = "+ this.intervaltime);
 			if(cmd.hasOption("advertisedhostname")){
 				//TODO
 			}
@@ -222,6 +234,10 @@ public class EzServer implements Runnable {
 				System.out.println("threads +"+ numberOfThreads+"created");
 				
 				Service s = new Service(clientSocket,this,debug);
+				//TODO
+				//DO INTERVAL CONNECTION STUFF
+				
+				
 				
 			}
 		} catch (IOException e) {
