@@ -1,12 +1,18 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -27,6 +33,12 @@ public class Service extends Thread{
 	private String secret;
 	private String command;
 	private boolean debug;
+	
+	private int resultSize2;
+	private long fileSize;
+	private String fileName;
+	private String uri2;
+	private String shareFileName;
 	
 	public Service(){
 		super();
@@ -58,6 +70,53 @@ public class Service extends Thread{
 			}
 			
 			out.writeUTF(output);
+			
+			if(command.equals("FETCH")) {
+				
+				
+				System.out.println("________"+ fileName);
+				
+				if(resultSize2 != 0) {
+				
+				File f = new File("server_files/"+fileName);
+				if(f.exists()) {
+					
+					// Send this back to client so that they know what the file is.
+					JSONObject trigger = new JSONObject();
+					trigger.put("command_name", "SENDING_FILE");
+					trigger.put("file_name",fileName);
+					trigger.put("file_size",f.length());
+					try {
+						// Send trigger to client
+						
+						//out.writeUTF(trigger.toJSONString());
+						
+						//fetchMessage.append(trigger.toJSONString()+"\n");
+						
+						// Start sending file
+						RandomAccessFile byteFile = new RandomAccessFile(f,"r");
+						byte[] sendingBuffer = new byte[1024*1024];
+						int num;
+						// While there are still bytes to send..
+						while((num = byteFile.read(sendingBuffer)) > 0){
+							System.out.println(num);
+							
+							  out.write(Arrays.copyOf(sendingBuffer, num));
+							 
+							//fetchMessage.append(Arrays.copyOf(sendingBuffer, num)+"\n");
+							
+						}
+						byteFile.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					
+				} else {
+					// Throw an error here..
+				} }
+				
+			}
+			
 			in.close();
 			out.close();
 			
@@ -343,6 +402,10 @@ public class Service extends Thread{
 			Resource share_resource=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
 			boolean hasShared=false;
+			
+			shareFileName = getFileName(uri);
+			System.out.println("________"+ shareFileName);
+			
 			for (int i=0;i<server.getResource().size();i++){
 				if(hasShared){
 					break;
@@ -360,6 +423,21 @@ public class Service extends Thread{
 			//new resource is added into server resourceArray
 			if(!hasShared){
 				server.getResource().add(share_resource);
+				try {
+					URI u = new URI(uri);
+					
+					File source = new File(u); 
+					File dest = new File("server_files/"+shareFileName);
+					//FileUtils.copyDirectory(source, dest);
+					FileUtils.copyFile(source, dest);
+					
+				} catch (URISyntaxException e) {
+					// error
+					
+				} catch (IOException e) {
+				    e.printStackTrace();
+				}
+				
 			}
 			return generate_success_message();
 			
@@ -430,7 +508,7 @@ public class Service extends Thread{
 		 */
 		private String fetch(){
 			
-			int resultSize = 0;
+			resultSize2 = 0;
 			JSONObject response = new JSONObject();
 			StringBuilder fetchMessage = new StringBuilder();
 			JSONObject resource;
@@ -444,18 +522,20 @@ public class Service extends Thread{
 					resource = resources.get(i).getResourceWithServer
 							(server.getHostName(),server.getPort()).getJSON();
 					
+					fileName = getFileName(resources.get(i).getUri());
+					
 					response.put("response", "success");
 					fetchMessage.append(response.toJSONString()+"\n");
 					resource.put("resourceSize", HelperFunction.fileSize(uri));
 					fetchMessage.append(resource+"\n");
-					resultSize ++;
+					resultSize2 ++;
 					
 				}
 			}
 			
 			JSONObject result = new JSONObject();
 			
-			result.put("resultSize", resultSize);
+			result.put("resultSize", resultSize2);
 			fetchMessage.append(result.toJSONString());
 			
 			return fetchMessage.toString();
@@ -626,6 +706,22 @@ public class Service extends Thread{
 			
 			return true;
 			
+		}
+		
+		private String getFileName(String f) {
+			String fileName = "";
+			String fileName2;
+			for(int i=(f.length()-1); i>-1; i--) {
+				char c = f.charAt(i);
+				
+				if(c == '/') {
+					break;
+				}
+				fileName = fileName + c;
+			}
+			fileName2 = new StringBuilder(fileName).reverse().toString();
+			
+			return fileName2;
 		}
 	
 

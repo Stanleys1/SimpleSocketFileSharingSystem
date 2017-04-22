@@ -2,10 +2,13 @@ import org.apache.commons.cli.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.rmi.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.json.simple.*;
 //test
@@ -21,6 +24,9 @@ public class EzClient {
 	private String hostname;
 	private int port;
 	private boolean query_relay= false;
+	
+	private String fileName2;
+	private CommandLine cmd;
 	
 	public EzClient(String[] args,boolean query)throws NullPointerException, IOException{
 		this.args = args; 
@@ -94,7 +100,7 @@ public class EzClient {
 		JSONObject message = new JSONObject();
 		JSONArray exchange_servers= new JSONArray();
 
-		CommandLine cmd;
+		//CommandLine cmd;    Jason: cmd is also used in run() method
 		CommandLineParser parser = new DefaultParser();
 		
 		
@@ -222,6 +228,9 @@ public class EzClient {
 				}else{
 					message.put("resourceTemplate",r.getJSON());
 					message.put("command","FETCH");
+					
+					fileName2 = getFileName(r.getUri());
+					
 					if(debug){
 						System.out.println(message.toJSONString());
 					}
@@ -234,6 +243,35 @@ public class EzClient {
 			exception.printStackTrace();
 		}
 		return message;
+	}
+    
+    private String getFileName(String f) {
+		String fileName = "";
+		String fileName2;
+		for(int i=(f.length()-1); i>-1; i--) {
+			char c = f.charAt(i);
+			
+			if(c == '/') {
+				break;
+			}
+			fileName = fileName + c;
+		}
+		fileName2 = new StringBuilder(fileName).reverse().toString();
+		
+		return fileName2;
+	}
+    
+    public static int setChunkSize(long fileSizeRemaining){
+		// Determine the chunkSize
+		int chunkSize=1024*1024;
+		
+		// If the file size remaining is less than the chunk size
+		// then set the chunk size to be equal to the file size.
+		if(fileSizeRemaining<chunkSize){
+			chunkSize=(int) fileSizeRemaining;
+		}
+		
+		return chunkSize;
 	}
     
 
@@ -258,6 +296,53 @@ public class EzClient {
 		    out.flush();
 		    
 		    data = in.readUTF();// read a line of data from the stream
+		    
+		    
+		    if(cmd.hasOption("fetch")) {
+		    	
+		    	
+				
+				// Find out how much size is remaining to get from the server.
+				File f = new File("server_files/"+fileName2);
+				
+				if(f.exists()) {
+				// The file location
+				String fileName = "client_files/"+fileName2;
+					
+				// Create a RandomAccessFile to read and write the output file.
+				RandomAccessFile downloadingFile = new RandomAccessFile(fileName, "rw");
+				
+				long fileSizeRemaining = (Long) f.length();
+				
+				int chunkSize = setChunkSize(fileSizeRemaining);
+				
+				// Represents the receiving buffer
+				byte[] receiveBuffer = new byte[chunkSize];
+				
+				// Variable used to read if there are remaining size left to read.
+				int num;
+				
+				System.out.println("Downloading "+fileName+" of size "+fileSizeRemaining);
+				while((num=in.read(receiveBuffer))>0){
+					// Write the received bytes into the RandomAccessFile
+					downloadingFile.write(Arrays.copyOf(receiveBuffer, num));
+					
+					// Reduce the file size left to read..
+					fileSizeRemaining-=num;
+					
+					// Set the chunkSize again
+					chunkSize = setChunkSize(fileSizeRemaining);
+					receiveBuffer = new byte[chunkSize];
+					
+					// If you're done then break
+					if(fileSizeRemaining==0){
+						break;
+					}
+				}
+				System.out.println("File received!");
+				downloadingFile.close();
+		    	
+		    } }
 		    
 		    System.out.println("RECEIVED!") ; 
 		    s.close();
