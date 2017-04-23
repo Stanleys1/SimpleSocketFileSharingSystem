@@ -28,11 +28,14 @@ public class EzClient {
 	
 	private String fileName2;
 	private CommandLine cmd;
+	private HelpFormatter formatter;
 	
 	public EzClient(String[] args,boolean query)throws NullPointerException, IOException{
 		this.args = args; 
 		this.query_relay = query;
 		this.options = generateOptions();
+		this.formatter = new HelpFormatter();
+		this.formatter.printHelp("help", options);
 	}
 	
 	public static void main (String[] args){
@@ -66,23 +69,24 @@ public class EzClient {
 	private Options generateOptions(){
 		ArrayList<Option> op= new ArrayList<Option>();
 		
-		op.add(new Option("publish",false,null));
-		op.add(new Option("exchange", false, null));
-		op.add(new Option("channel", true, "channelname"));
-		op.add(new Option("debug",false,null));
-		op.add(new Option("description",true,"description"));
-		op.add(new Option("fetch",false,null));
-		op.add(new Option("host",true,"ip"));
-		op.add(new Option("name",true,"name"));
-		op.add(new Option("owner",true,"name"));
-		op.add(new Option("port",true,"portnumber"));
-		op.add(new Option("query",false,null));
-		op.add(new Option("remove",false,null));
-		op.add(new Option("secret",true,"serversecret"));
-		op.add(new Option("servers",true,"serverlist"));
-		op.add(new Option("share",false, null));
-		op.add(Option.builder("tags").hasArgs().argName("tag").build());
-		op.add(new Option("uri",true,"uri"));
+		op.add(new Option("publish",false,"publish a resource"));
+		op.add(new Option("exchange", false,"exchange serverlists to servers"));
+		op.add(new Option("channel", true, "channel name for the resource"));
+		op.add(new Option("debug",false,"debug mode on"));
+		op.add(new Option("description",true,"description of the resource"));
+		op.add(new Option("fetch",false,"fetch a resource from the server"));
+		op.add(new Option("host",true,"ip address of the server"));
+		op.add(new Option("name",true,"the name of the resource"));
+		op.add(new Option("owner",true,"the owner name of the resource"));
+		op.add(new Option("port",true,"the port number of the resource"));
+		op.add(new Option("query",false,"query a resource using a template"));
+		op.add(new Option("remove",false,"remove a resource from the server"));
+		op.add(new Option("secret",true,"secret to be able to share in server"));
+		op.add(new Option("servers",true,"the serverlist of other servers"));
+		op.add(new Option("share",false, "share a file into the server"));
+		op.add(Option.builder("tags").hasArgs().argName("tag").desc("tags on the resources (multiple)").build());
+		op.add(new Option("uri",true,"uri of the resource"));
+		op.add(new Option("help",false,"get help on all options"));
 		
 		
 		Options options = new Options();
@@ -111,6 +115,9 @@ public class EzClient {
 			Resource r = commands_getResource(cmd);
 			if(cmd.hasOption("debug")){
 				debug=true;
+			}
+			if(cmd.hasOption("help")){
+				System.exit(0);
 			}
 			if(cmd.hasOption("host")){
 				this.hostname = cmd.getOptionValue("host");

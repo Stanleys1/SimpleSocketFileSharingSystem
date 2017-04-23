@@ -13,6 +13,7 @@ import javax.net.ServerSocketFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -50,6 +51,7 @@ public class EzServer implements Runnable {
 	private boolean debug = false;
 	private String[] args;
 	private ArrayList<String> blockedIP;
+	private HelpFormatter formatter;
 	
 	public static void main (String[] args){
 		//args must be present
@@ -80,6 +82,9 @@ public class EzServer implements Runnable {
 		serverRecords = new ArrayList<String> ();
 		blockedIP = new ArrayList<String>();
 		
+		this.formatter = new HelpFormatter();
+		this.formatter.printHelp("help", options);
+		
 		//For testing purposes
 		//serverRecords.add("localhost:8000");
 		//serverRecords.add("localhost:10000");
@@ -92,12 +97,13 @@ public class EzServer implements Runnable {
 	private Options generateOptions(){
 		ArrayList<Option> op= new ArrayList<Option>();
 		
-		op.add(new Option("advertisedhostname",true,"hostname"));
-		op.add(new Option("connectionintervallimit", true, "timelimit"));
-		op.add(new Option("exchangeinterval", true, "exchangetime"));
-		op.add(new Option("port",true,"portnumber"));
-		op.add(new Option("secret",true,"secret"));
-		op.add(new Option("debug",false,null));
+		op.add(new Option("advertisedhostname",true,"change the advertised hostname"));
+		op.add(new Option("connectionintervallimit", true, "change the connection interval for each IP"));
+		op.add(new Option("exchangeinterval", true, "change the interval for syncing between servers"));
+		op.add(new Option("port",true,"portnumber for the server to listen in"));
+		op.add(new Option("secret",true,"set the secret for server. Default will be randomised 25-35 long random string"));
+		op.add(new Option("debug",false,"debug mode"));
+		op.add(new Option("help",false,"get help on all arguments"));
 		
 		Options options = new Options();
 		
@@ -181,6 +187,9 @@ public class EzServer implements Runnable {
 			//parse args
 			cmd = parser.parse(options, args);
 			
+			if(cmd.hasOption("help")){
+				System.exit(0);
+			}
 			//Setting exchange interval
 			if(cmd.hasOption("exchangeinterval")){
 				String timeString = cmd.getOptionValue("exchangeinterval");
