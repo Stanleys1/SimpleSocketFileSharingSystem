@@ -27,7 +27,7 @@ import org.apache.commons.cli.ParseException;
 //-secret : set ur own secret, if not provided will generate 25-35 long random word
 //-debug: service will print all message sent
 //-connectionintervallimit: change the connection interval for each ips
-//-advertisedname: NOT DONE
+//-advertisedname: change the advertised host name (NOT DNS-RESOLVABLE)
 
 
 public class EzServer implements Runnable {
