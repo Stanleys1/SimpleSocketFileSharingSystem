@@ -542,35 +542,56 @@ public class Service extends Thread{
 			
 			
 		}
+		
+		//do query
 		private String query(boolean relay){
+			//result size of query
 			int resultSize = 0;
+			
+			//build query message
 			StringBuilder querymessage = new StringBuilder();
+			
+			//create response
 			JSONObject response = new JSONObject();
 			response.put("response", "success");
 			querymessage.append(response.toJSONString()+"\n");
 			JSONObject resource;
 			ArrayList<Resource> resources = server.getResource();
 			
+			//create template from the client arguments
 			Resource template=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
+			
 			for(int i = 0 ; i< resources.size();i++){
+				//if resource match template, add to the query message
 				if(resources.get(i).match_template(template)){
 					resource = resources.get(i).getResourceWithServer
 							(server.getHostName(),server.getPort()).getJSON();
 					querymessage.append(resource+"\n");
+					//add result size
 					resultSize ++;
 					
 				}
 			}
+			
+			//if there is a need for query relay
 			if(relay){
+				//get serverRecords
 				ArrayList<String> records =this.server.getServerRecord();
+				
+				//for all servers in serverRecords
 				for(int i=0 ; i<records.size();i++){
+					
 					String serverString[] = records.get(i).split(":");
 					String serverHost = serverString[0];
 					int serverPort = Integer.parseInt(serverString[1]);
+					
+					
+					//build a argument for client
 					String serverArgument = "-query -host "+serverHost+" -port "+ serverPort;
 					StringBuilder b = new StringBuilder();
 					b.append(serverArgument);
+					//add respective fields if its not empty
 					if(!name.equals("")){
 						b.append(" -name "+name);
 					}
@@ -587,22 +608,36 @@ public class Service extends Thread{
 						}
 					}
 					
+					//Owner and Channel are directly set to "" 
+					//in the query relay since 
+					//both fields are not provided to the argument for the client
+					
+					
 					//System.out.println("relay to with args"+ b.toString());
+					
+					
+					//add the arguments into the client
 					try{
+						//set relay argument to false
 						EzClient c = new EzClient(b.toString().split(" "),false);
 						String serverResponse =c.run();
+						
+						//get the response and add it to querymessage
 						String[] serverRes= serverResponse.split("\n");
 						for(int k = 1 ; k<serverRes.length-1;k++){
 							querymessage.append(serverRes[k]+"\n");
 							resultSize++;
 						}
 					}catch(IOException e){
+						//log if there is a failure in connection
 						System.out.println("failed to connect to"+records.get(i));
 					}catch(NullPointerException e ){
 						System.out.println("failed to connect to"+records.get(i));
 					}
 				}
 			}
+			
+			//add resultsize to the query message
 			JSONObject result = new JSONObject();
 			result.put("resultSize", resultSize);
 			querymessage.append(result.toJSONString());
