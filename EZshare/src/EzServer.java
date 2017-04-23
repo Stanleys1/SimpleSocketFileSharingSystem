@@ -45,6 +45,7 @@ public class EzServer implements Runnable {
 	private ArrayList<Resource> resources;
 	private Timer timer;
 	private int port;
+	private String host;
 	private String secret;
 	private ServerSocket listen;
 	private Options options;
@@ -83,7 +84,6 @@ public class EzServer implements Runnable {
 		blockedIP = new ArrayList<String>();
 		
 		this.formatter = new HelpFormatter();
-		this.formatter.printHelp("-help", options);
 		
 		//For testing purposes
 		//serverRecords.add("localhost:8000");
@@ -120,12 +120,7 @@ public class EzServer implements Runnable {
 	 * @return hostname
 	 */
 	public String getHostName(){
-		try {
-			return InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-		return "";
+		return host;
 	}
 	
 	/**
@@ -188,6 +183,7 @@ public class EzServer implements Runnable {
 			cmd = parser.parse(options, args);
 			
 			if(cmd.hasOption("help")){
+				this.formatter.printHelp("Help", options);
 				System.exit(0);
 			}
 			//Setting exchange interval
@@ -253,7 +249,15 @@ public class EzServer implements Runnable {
 			
 			//get advertised host name
 			if(cmd.hasOption("advertisedhostname")){
-				//TODO
+				host = cmd.getOptionValue("advertisedhostname");
+				
+			}else{
+				try {
+					host = InetAddress.getLocalHost().getHostName();
+				} catch (UnknownHostException e) {
+					System.out.println("host not found");
+					host = "";
+				}
 			}
 			
 			

@@ -35,7 +35,6 @@ public class EzClient {
 		this.query_relay = query;
 		this.options = generateOptions();
 		this.formatter = new HelpFormatter();
-		this.formatter.printHelp("-help", options);
 	}
 	
 	public static void main (String[] args){
@@ -118,6 +117,7 @@ public class EzClient {
 				debug=true;
 			}
 			if(cmd.hasOption("help")){
+				this.formatter.printHelp("Help", options);
 				System.exit(0);
 			}
 			if(cmd.hasOption("host")){
