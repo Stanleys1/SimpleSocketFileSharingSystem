@@ -1,6 +1,11 @@
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+/**
+ * 
+ * Resource class
+ *
+ */
 public class Resource {
 	private String name;
 	private String description;
@@ -10,6 +15,16 @@ public class Resource {
 	private String owner;
 	private String ezserver;
 	
+	/**
+	 * constructor for resource
+	 * @param name name of resource
+	 * @param tags tags inside the resource
+	 * @param description resource description
+	 * @param uri uri of the resource
+	 * @param channel channel that the resource will be stored in
+	 * @param owner owner of the resource
+	 * @param ezserver the server the resource is in
+	 */
 	public Resource(String name, String[] tags,String description,
 			String uri, String channel,String owner,String ezserver){
 		this.name= name;
@@ -22,34 +37,66 @@ public class Resource {
 		
 	}
 	
+	/**
+	 * get name of the resource
+	 * @return name
+	 */
 	public String getName(){
 		return name;
 	}
 	
+	/**
+	 * get description of the resource
+	 * @return description
+	 */
 	public String getDescription(){
 		return description;
 	}
 	
+	/**
+	 * get tags of the resource
+	 * @return tags
+	 */
 	public String[] getTags(){
 		return tags;
 	}
 	
+	/**
+	 * get uri of the resource
+	 * @return uri
+	 */
 	public String getUri(){
 		return uri;
 	}
 	
+	/**
+	 * get the channel name of the resource
+	 * @return channel
+	 */
 	public String getChannel(){
 		return channel;
 	}
 	
+	/**
+	 * get the owner name of the resource
+	 * @return owner
+	 */
 	public String getOwner(){
 		return owner;
 	}
 	
+	/**
+	 * get the ezserver that the resource is in
+	 * @return ezserver
+	 */
 	public String getEzserver(){
 		return ezserver;
 	}
 	
+	/**
+	 * create a JSON object of the resource
+	 * @return object the json object of the resource class
+	 */
 	public JSONObject getJSON(){
 		JSONObject inside = new JSONObject();
 		inside.put("name", name);
@@ -71,6 +118,11 @@ public class Resource {
 		
 	}
 	
+	/**
+	 * check if a template matches the resource 
+	 * @param template
+	 * @return true if it matches, false otherwise
+	 */
 	public boolean match_template(Resource template){
 		if(!template.getChannel().equals(channel)){
 			return false;
@@ -109,6 +161,12 @@ public class Resource {
 		}else return true;
 	}
 	
+	/**
+	 * get a resource file with ezserver included
+	 * @param hostname hostname of the server
+	 * @param port port of the server
+	 * @return resource new resource file
+	 */
 	public Resource getResourceWithServer(String hostname, int port){
 		this.ezserver= hostname+":"+port;
 		return this;

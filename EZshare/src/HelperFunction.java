@@ -4,8 +4,18 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 
+/**
+ * HelperFunction class that provide useful function
+ * to be used on other classes
+ *
+ */
 public class HelperFunction {
 	
+	/**
+	 * check if the string is integer
+	 * @param s string
+	 * @return true if integer, false if not integer
+	 */
 	public static boolean IsInteger(String s){
 		if(s.matches("^[0-9]+$")){
 			return true;
@@ -14,6 +24,11 @@ public class HelperFunction {
 		
 	}
 	
+	/**
+	 * check if the string is an ip address
+	 * @param s
+	 * @return
+	 */
 	public static boolean IsIP(String s){
 		
 		try {
@@ -40,6 +55,11 @@ public class HelperFunction {
 		}
 	}
 	
+	/**
+	 * check if the string is a file scheme
+	 * @param s
+	 * @return true if it is a file scheme, false otherwise
+	 */
 	public static boolean isFileScheme(String s){
 		try {
 			URI u = new URI(s);
@@ -54,6 +74,11 @@ public class HelperFunction {
 		}
 	}
 	
+	/**
+	 * get the filesize of a URI file scheme string
+	 * @param s 
+	 * @return the file size length
+	 */
 	public static long fileSize(String s){
 		try {
 			URI u = new URI(s);
