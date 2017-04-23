@@ -83,7 +83,7 @@ public class EzServer implements Runnable {
 		blockedIP = new ArrayList<String>();
 		
 		this.formatter = new HelpFormatter();
-		this.formatter.printHelp("help", options);
+		this.formatter.printHelp("-help", options);
 		
 		//For testing purposes
 		//serverRecords.add("localhost:8000");
