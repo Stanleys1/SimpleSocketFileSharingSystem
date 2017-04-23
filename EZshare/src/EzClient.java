@@ -84,7 +84,8 @@ public class EzClient {
 		op.add(new Option("secret",true,"secret to be able to share in server"));
 		op.add(new Option("servers",true,"the serverlist of other servers"));
 		op.add(new Option("share",false, "share a file into the server"));
-		op.add(Option.builder("tags").hasArgs().argName("tag").desc("tags on the resources (multiple)").build());
+		op.add(Option.builder("tags").hasArgs().argName("multiple tags separated by space").
+				desc("tags on the resources (multiple)").build());
 		op.add(new Option("uri",true,"uri of the resource"));
 		op.add(new Option("help",false,"get help on all options"));
 		
