@@ -339,7 +339,7 @@ public class Service extends Thread{
 					 uri,  channel, owner, ezserver);
 			boolean hasPublished=false;
 			//get a synchronize lock
-			synchronized(server){
+			synchronized(server.getResource()){
 				for (int i=0;i<server.getResource().size();i++){
 					if(hasPublished){
 						break;
@@ -355,11 +355,9 @@ public class Service extends Thread{
 				if(!hasPublished){
 					server.getResource().add(publish_resource);
 				}
-				//sleep several seconds
+				//sleep 1 second
 				try{
-					//test 
-					System.out.println("100s cannot operate server");
-					sleep(100000);
+					sleep(1000);
 				}catch(InterruptedException e){
 					e.printStackTrace();
 				}
@@ -405,40 +403,47 @@ public class Service extends Thread{
 			
 			shareFileName = getFileName(uri);
 			System.out.println("________"+ shareFileName);
+			synchronized(server.getResource()){
+				for (int i=0;i<server.getResource().size();i++){
+					if(hasShared){
+						break;
+					}
+					
+					// same resource with different owners is not allowed to share
+					if(!publish_notAllowed(server.getResource().get(i), uri,owner,channel)){
+						return generate_error_message( "cannot share resource"); 
+					}
+					if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
+						server.getResource().set(i, share_resource); // overwrite
+						hasShared=true;
+					}
+				}
+				//new resource is added into server resourceArray
+				if(!hasShared){
+					server.getResource().add(share_resource);
+					try {
+						URI u = new URI(uri);
+						
+						File source = new File(u); 
+						File dest = new File("server_files/"+shareFileName);
+						//FileUtils.copyDirectory(source, dest);
+						FileUtils.copyFile(source, dest);
+						
+					} catch (URISyntaxException e) {
+						// error
+						
+					} catch (IOException e) {
+					    e.printStackTrace();
+					}
+				}
+			}
+			//sleep 1 second
+			try{
+				sleep(1000);
+			}catch(InterruptedException e){
+				e.printStackTrace();
+			}
 			
-			for (int i=0;i<server.getResource().size();i++){
-				if(hasShared){
-					break;
-				}
-				
-				// same resource with different owners is not allowed to share
-				if(!publish_notAllowed(server.getResource().get(i), uri,owner,channel)){
-					return generate_error_message( "cannot share resource"); 
-				}
-				if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
-					server.getResource().set(i, share_resource); // overwrite
-					hasShared=true;
-				}
-			}
-			//new resource is added into server resourceArray
-			if(!hasShared){
-				server.getResource().add(share_resource);
-				try {
-					URI u = new URI(uri);
-					
-					File source = new File(u); 
-					File dest = new File("server_files/"+shareFileName);
-					//FileUtils.copyDirectory(source, dest);
-					FileUtils.copyFile(source, dest);
-					
-				} catch (URISyntaxException e) {
-					// error
-					
-				} catch (IOException e) {
-				    e.printStackTrace();
-				}
-				
-			}
 			return generate_success_message();
 			
 			//return "share";
@@ -454,7 +459,7 @@ public class Service extends Thread{
 					 uri,  channel, owner, ezserver);
 			boolean resource_need_Removed=false;
 			int index_remove=0;
-			synchronized(server){
+			synchronized(server.getResource()){
 				for (int i=0;i<server.getResource().size();i++){
 					if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
 						index_remove=i;
@@ -467,37 +472,50 @@ public class Service extends Thread{
 				}
 				server.getResource().remove(index_remove);
 			}
-			
+			//sleep 1 seconds
+			try{
+				sleep(1000);
+			}catch(InterruptedException e){
+				e.printStackTrace();
+			}
 			return generate_success_message();
 		}
 		private String exchange(String[] serverlist){
-			ArrayList<String> records = server.getServerRecord();
 			boolean duplicate = false;
 			boolean isThisServer = false;
 			String currentServer = server.getHostName()+":"+server.getPort();
 			String currentServer2 = "localhost"+":"+server.getPort();
 			String currentServerIP = server.getHostIP()+":"+server.getPort();
-			for( int i = 0 ;i < serverlist.length;i++){
-				duplicate = false;
-				isThisServer = false;
-				for(int j = 0;j<records.size();j++){
-					if(serverlist[i].equals(records.get(j))){
-						duplicate = true;
+			synchronized(server.getServerRecord()){
+				ArrayList<String> records = server.getServerRecord();
+				for( int i = 0 ;i < serverlist.length;i++){
+					duplicate = false;
+					isThisServer = false;
+					for(int j = 0;j<records.size();j++){
+						if(serverlist[i].equals(records.get(j))){
+							duplicate = true;
+						}
 					}
-				}
-				if(currentServer.equals(serverlist[i])){
-					isThisServer = true;
-				}
-				if(currentServer2.equals(serverlist[i])){
-					isThisServer = true;
-				}
-				if(currentServerIP.equals(serverlist[i])){
-					isThisServer = true;
-				}
-				if(!duplicate && !isThisServer){
-					records.add(serverlist[i]);
-				}
+					if(currentServer.equals(serverlist[i])){
+						isThisServer = true;
+					}
+					if(currentServer2.equals(serverlist[i])){
+						isThisServer = true;
+						}
+					if(currentServerIP.equals(serverlist[i])){
+						isThisServer = true;
+						}
+					if(!duplicate && !isThisServer){
+						records.add(serverlist[i]);
+						}
+					}
 				//System.out.println(serverlist[i]);
+				}
+			//sleep 1 seconds
+			try{
+				sleep(1000);
+			}catch(InterruptedException e){
+				e.printStackTrace();
 			}
 			return generate_success_message();
 		}
@@ -512,27 +530,31 @@ public class Service extends Thread{
 			JSONObject response = new JSONObject();
 			StringBuilder fetchMessage = new StringBuilder();
 			JSONObject resource;
-			ArrayList<Resource> resources = server.getResource();
-			
 			Resource template=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
-			
-			for(int i = 0 ; i< resources.size();i++){
-				if(resources.get(i).match_template(template)){
-					resource = resources.get(i).getResourceWithServer
-							(server.getHostName(),server.getPort()).getJSON();
-					
-					fileName = getFileName(resources.get(i).getUri());
-					
-					response.put("response", "success");
-					fetchMessage.append(response.toJSONString()+"\n");
-					resource.put("resourceSize", HelperFunction.fileSize(uri));
-					fetchMessage.append(resource+"\n");
-					resultSize2 ++;
-					
+			synchronized(server.getResource()){
+				ArrayList<Resource> resources = server.getResource();
+				for(int i = 0 ; i< resources.size();i++){
+					if(resources.get(i).match_template(template)){
+						resource = resources.get(i).getResourceWithServer
+								(server.getHostName(),server.getPort()).getJSON();
+						
+						fileName = getFileName(resources.get(i).getUri());
+						
+						response.put("response", "success");
+						fetchMessage.append(response.toJSONString()+"\n");
+						resource.put("resourceSize", HelperFunction.fileSize(uri));
+						fetchMessage.append(resource+"\n");
+						resultSize2 ++;
+						}
+					}
 				}
+			//sleep 1 seconds
+			try{
+				sleep(1000);
+			}catch(InterruptedException e){
+				e.printStackTrace();
 			}
-			
 			JSONObject result = new JSONObject();
 			
 			result.put("resultSize", resultSize2);
@@ -556,87 +578,98 @@ public class Service extends Thread{
 			response.put("response", "success");
 			querymessage.append(response.toJSONString()+"\n");
 			JSONObject resource;
-			ArrayList<Resource> resources = server.getResource();
+			
+			
 			
 			//create template from the client arguments
 			Resource template=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
-			
-			for(int i = 0 ; i< resources.size();i++){
-				//if resource match template, add to the query message
-				if(resources.get(i).match_template(template)){
-					resource = resources.get(i).getResourceWithServer
-							(server.getHostName(),server.getPort()).getJSON();
-					querymessage.append(resource+"\n");
-					//add result size
-					resultSize ++;
-					
+			synchronized(server.getResource()){
+				ArrayList<Resource> resources = server.getResource();
+				for(int i = 0 ; i< resources.size();i++){
+					//if resource match template, add to the query message
+					if(resources.get(i).match_template(template)){
+						resource = resources.get(i).getResourceWithServer
+								(server.getHostName(),server.getPort()).getJSON();
+						querymessage.append(resource+"\n");
+						//add result size
+						resultSize ++;
+						
+					}
 				}
 			}
+			
 			
 			//if there is a need for query relay
 			if(relay){
-				//get serverRecords
-				ArrayList<String> records =this.server.getServerRecord();
-				
-				//for all servers in serverRecords
-				for(int i=0 ; i<records.size();i++){
+				synchronized(server.getServerRecord()){
+					//get serverRecords
+					ArrayList<String> records =this.server.getServerRecord();
 					
-					String serverString[] = records.get(i).split(":");
-					String serverHost = serverString[0];
-					int serverPort = Integer.parseInt(serverString[1]);
-					
-					
-					//build a argument for client
-					String serverArgument = "-query -host "+serverHost+" -port "+ serverPort;
-					StringBuilder b = new StringBuilder();
-					b.append(serverArgument);
-					//add respective fields if its not empty
-					if(!name.equals("")){
-						b.append(" -name "+name);
-					}
-					if(!uri.equals("")){
-						b.append(" -uri "+ uri);
-					}
-					if(!description.equals("")){
-						b.append(" -description "+ description);
-					}
-					if(tagsString.length!=0){
-						b.append(" -tags");
-						for(int j = 0 ; j<this.tagsString.length;j++){
-							b.append(" "+tagsString[j]);
-						}
-					}
-					
-					//Owner and Channel are directly set to "" 
-					//in the query relay since 
-					//both fields are not provided to the argument for the client
-					
-					
-					//System.out.println("relay to with args"+ b.toString());
-					
-					
-					//add the arguments into the client
-					try{
-						//set relay argument to false
-						EzClient c = new EzClient(b.toString().split(" "),false);
-						String serverResponse =c.run();
+					//for all servers in serverRecords
+					for(int i=0 ; i<records.size();i++){
 						
-						//get the response and add it to querymessage
-						String[] serverRes= serverResponse.split("\n");
-						for(int k = 1 ; k<serverRes.length-1;k++){
-							querymessage.append(serverRes[k]+"\n");
-							resultSize++;
+						String serverString[] = records.get(i).split(":");
+						String serverHost = serverString[0];
+						int serverPort = Integer.parseInt(serverString[1]);
+						
+						
+						//build a argument for client
+						String serverArgument = "-query -host "+serverHost+" -port "+ serverPort;
+						StringBuilder b = new StringBuilder();
+						b.append(serverArgument);
+						//add respective fields if its not empty
+						if(!name.equals("")){
+							b.append(" -name "+name);
 						}
-					}catch(IOException e){
-						//log if there is a failure in connection
-						System.out.println("failed to connect to"+records.get(i));
-					}catch(NullPointerException e ){
-						System.out.println("failed to connect to"+records.get(i));
+						if(!uri.equals("")){
+							b.append(" -uri "+ uri);
+						}
+						if(!description.equals("")){
+							b.append(" -description "+ description);
+						}
+						if(tagsString.length!=0){
+							b.append(" -tags");
+							for(int j = 0 ; j<this.tagsString.length;j++){
+								b.append(" "+tagsString[j]);
+							}
+						}
+						
+						//Owner and Channel are directly set to "" 
+						//in the query relay since 
+						//both fields are not provided to the argument for the client
+						
+						
+						//System.out.println("relay to with args"+ b.toString());
+						
+						
+						//add the arguments into the client
+						try{
+							//set relay argument to false
+							EzClient c = new EzClient(b.toString().split(" "),false);
+							String serverResponse =c.run();
+							
+							//get the response and add it to querymessage
+							String[] serverRes= serverResponse.split("\n");
+							for(int k = 1 ; k<serverRes.length-1;k++){
+								querymessage.append(serverRes[k]+"\n");
+								resultSize++;
+							}
+						}catch(IOException e){
+							//log if there is a failure in connection
+							System.out.println("failed to connect to"+records.get(i));
+						}catch(NullPointerException e ){
+							System.out.println("failed to connect to"+records.get(i));
+						}
 					}
 				}
 			}
-			
+			//sleep 1 seconds
+			try{
+				sleep(1000);
+			}catch(InterruptedException e){
+				e.printStackTrace();
+			}
 			//add resultsize to the query message
 			JSONObject result = new JSONObject();
 			result.put("resultSize", resultSize);
