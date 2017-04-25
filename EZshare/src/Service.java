@@ -266,10 +266,11 @@ public class Service extends Thread{
 					if(!HelperFunction.isURI(uri)){
 						return generate_error_message("invalid resource");
 					}
+					
 					message = remove();
 					break;
 				case "PUBLISH":
-					if(!HelperFunction.isURI(uri)){
+					if(!HelperFunction.isURI(uri)||HelperFunction.isFileScheme(uri)){
 						return generate_error_message("invalid resource");
 					}
 					message = publish();
@@ -510,13 +511,13 @@ public class Service extends Thread{
 						}
 					}
 				//System.out.println(serverlist[i]);
+				//sleep 1 seconds
+				try{
+					sleep(1000);
+					}catch(InterruptedException e){
+					e.printStackTrace();
+					}				
 				}
-			//sleep 1 seconds
-			try{
-				sleep(1000);
-			}catch(InterruptedException e){
-				e.printStackTrace();
-			}
 			return generate_success_message();
 		}
 		

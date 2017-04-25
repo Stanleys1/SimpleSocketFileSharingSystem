@@ -290,13 +290,14 @@ public class EzServer implements Runnable {
 				String incomingIP = clientSocket.getInetAddress().toString();
 				System.out.println(incomingIP);
 				
-				//if incoming ip inside blocked ip list, reject connection
-				for(int i = 0 ; i<this.blockedIP.size(); i++){
-					if(this.blockedIP.get(i).equals(incomingIP)){
-						blocked = true;
+				synchronized(this.blockedIP){
+					//if incoming ip inside blocked ip list, reject connection
+					for(int i = 0 ; i<this.blockedIP.size(); i++){
+						if(this.blockedIP.get(i).equals(incomingIP)){
+							blocked = true;
+						}
 					}
 				}
-				
 				//reject connection if blocked
 				if(blocked){
 					clientSocket.close();
@@ -305,10 +306,10 @@ public class EzServer implements Runnable {
 					numberOfThreads ++;
 				
 					System.out.println("threads +"+ numberOfThreads+"created");
-					
-					//add the current ip to the blocked list
-					this.blockedIP.add(incomingIP);
-					
+					synchronized(this.blockedIP){
+						//add the current ip to the blocked list
+						this.blockedIP.add(incomingIP);
+					}
 					//create new timer for that ip
 					//this will create 1 thread for every ip connection
 					Timer t = new Timer();
@@ -372,51 +373,51 @@ public class EzServer implements Runnable {
 		}
 		
 		public void run(){
-		
-			ArrayList<String> records =server.getServerRecord();
-			int record_size = records.size();
-			
-			//if record_size not empty
-			if(record_size!= 0){
+		    synchronized(server.getServerRecord()){
+		    	ArrayList<String> records =server.getServerRecord();
+				int record_size = records.size();
 				
-				//get a random server to be checked
-				int servernumber = rand.nextInt(record_size);
-				
-				//get the address
-				String address = records.get(servernumber);
-				System.out.println("syncing with "+address);
-				String[] addr = address.split(":");
-				StringBuilder b = new StringBuilder();
-				b.append(records.get(0));
-				for(int i = 1 ; i<records.size();i++){
-					b.append(",");
-					b.append(records.get(i));
-				}
-				//System.out.println(b.toString());
-				
-				//create argument for client
-				String argument = "-exchange -port "+addr[1]+" -host "+addr[0]+" -debug "+"-servers "+b;
-				//System.out.println(argument);
-				
-				
-				String[] arguments = argument.split(" ");
-				try{
-					//create client to run and get the response
-					EzClient c = new EzClient (arguments,false);
-					String response = c.run();
-					System.out.println(response);
-				}catch(NullPointerException e){
-					//if any exception found during connection, remove the address
-					System.out.println("null pointer found");
-					remove_addr(address,records);
+				//if record_size not empty
+				if(record_size!= 0){
 					
-				}catch(IOException e){
-					System.out.println("IO problems found");
-					remove_addr(address,records);
-				}
+					//get a random server to be checked
+					int servernumber = rand.nextInt(record_size);
 					
-			}
-			
+					//get the address
+					String address = records.get(servernumber);
+					System.out.println("syncing with "+address);
+					String[] addr = address.split(":");
+					StringBuilder b = new StringBuilder();
+					b.append(records.get(0));
+					for(int i = 1 ; i<records.size();i++){
+						b.append(",");
+						b.append(records.get(i));
+					}
+					//System.out.println(b.toString());
+					
+					//create argument for client
+					String argument = "-exchange -port "+addr[1]+" -host "+addr[0]+" -debug "+"-servers "+b;
+					//System.out.println(argument);
+					
+					
+					String[] arguments = argument.split(" ");
+					try{
+						//create client to run and get the response
+						EzClient c = new EzClient (arguments,false);
+						String response = c.run();
+						System.out.println(response);
+					}catch(NullPointerException e){
+						//if any exception found during connection, remove the address
+						System.out.println("null pointer found");
+						remove_addr(address,records);
+						
+					}catch(IOException e){
+						System.out.println("IO problems found");
+						remove_addr(address,records);
+					}
+						
+				}
+		    }
 		}
 		
 		
@@ -449,11 +450,20 @@ public class EzServer implements Runnable {
 
 		@Override
 		public void run() {
-			for(int i = 0 ; i < blockedIp.size(); i++){
-				if(blockedIp.get(i).equals(ip)){
-					blockedIp.remove(i);
+			synchronized(this.blockedIp){
+				for(int i = 0 ; i < blockedIp.size(); i++){
+					if(blockedIp.get(i).equals(ip)){
+						blockedIp.remove(i);
+					}
+				}
+				//sleep 1 second
+				try{
+					Thread.sleep(1000);
+				}catch(InterruptedException e){
+					e.printStackTrace();
 				}
 			}
+			
 		}
 		
 	}
