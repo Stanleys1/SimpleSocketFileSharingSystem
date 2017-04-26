@@ -4,7 +4,10 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -39,7 +42,7 @@ public class EzServer implements Runnable {
 	public static final int DEFAULTTIME = 600000;
 	
 	//default connection interval time
-	public static final int DEFAULTINTERVAL = 1;
+	public static final int DEFAULTINTERVAL = 1000;
 	private int exchangetime;
 	private int intervaltime;
 	private ArrayList<Resource> resources;
@@ -51,7 +54,7 @@ public class EzServer implements Runnable {
 	private Options options;
 	private boolean debug = false;
 	private String[] args;
-	private ArrayList<String> blockedIP;
+	private HashMap<String,Date> blockedIP;
 	private HelpFormatter formatter;
 	
 	public static void main (String[] args){
@@ -81,7 +84,7 @@ public class EzServer implements Runnable {
 		resources = new ArrayList<Resource>();
 		this.args = args;
 		serverRecords = new ArrayList<String> ();
-		blockedIP = new ArrayList<String>();
+		blockedIP = new HashMap<String,Date>();
 		
 		this.formatter = new HelpFormatter();
 		
@@ -235,7 +238,7 @@ public class EzServer implements Runnable {
 			if(cmd.hasOption("connectionintervallimit")){
 				String buffer =  cmd.getOptionValue("connectionintervallimit");
 				if(HelperFunction.IsInteger(buffer)){
-					this.intervaltime = Integer.parseInt(buffer);
+					this.intervaltime = Integer.parseInt(buffer)*1000;
 				}
 				else{
 					System.out.println("interval time not an integer, using default time");
@@ -245,7 +248,7 @@ public class EzServer implements Runnable {
 				this.intervaltime = DEFAULTINTERVAL;
 			}
 			
-			System.out.println("connectionintervallimit = "+ this.intervaltime);
+			System.out.println("connectionintervallimit = "+ this.intervaltime+"ms");
 			
 			//get advertised host name
 			if(cmd.hasOption("advertisedhostname")){
@@ -290,14 +293,17 @@ public class EzServer implements Runnable {
 				String incomingIP = clientSocket.getInetAddress().toString();
 				System.out.println(incomingIP);
 				
-				synchronized(this.blockedIP){
-					//if incoming ip inside blocked ip list, reject connection
-					for(int i = 0 ; i<this.blockedIP.size(); i++){
-						if(this.blockedIP.get(i).equals(incomingIP)){
-							blocked = true;
-						}
+				if(this.blockedIP.containsKey(incomingIP)){
+					Date now = new Date();
+					long time_diff = now.getTime()-this.blockedIP.get(incomingIP).getTime();
+					System.out.println("time difference of " +incomingIP+" is "+time_diff);
+					if(time_diff< this.intervaltime){
+						blocked = true;
 					}
 				}
+				
+				
+				
 				//reject connection if blocked
 				if(blocked){
 					clientSocket.close();
@@ -306,14 +312,8 @@ public class EzServer implements Runnable {
 					numberOfThreads ++;
 				
 					System.out.println("threads +"+ numberOfThreads+"created");
-					synchronized(this.blockedIP){
-						//add the current ip to the blocked list
-						this.blockedIP.add(incomingIP);
-					}
-					//create new timer for that ip
-					//this will create 1 thread for every ip connection
-					Timer t = new Timer();
-					t.schedule(new IPTimer(incomingIP,this.blockedIP), this.intervaltime*1000);
+					
+					this.blockedIP.put(incomingIP, new Date());
 				
 					Service s = new Service(clientSocket,this,debug);
 				}
@@ -431,40 +431,6 @@ public class EzServer implements Runnable {
 		}
 		
 		
-		
-	}
-	
-	
-	/**
-	 * IP timer to delete the blocked ip from the list
-	 *
-	 */
-	class IPTimer extends TimerTask{
-		private ArrayList<String> blockedIp;
-		private String ip;
-		
-		public IPTimer(String ip, ArrayList<String> blockedIP){
-			this.ip = ip;
-			this.blockedIp = blockedIP;
-		}
-
-		@Override
-		public void run() {
-			synchronized(this.blockedIp){
-				for(int i = 0 ; i < blockedIp.size(); i++){
-					if(blockedIp.get(i).equals(ip)){
-						blockedIp.remove(i);
-					}
-				}
-				//sleep 1 second
-				try{
-					Thread.sleep(1000);
-				}catch(InterruptedException e){
-					e.printStackTrace();
-				}
-			}
-			
-		}
 		
 	}
 	
