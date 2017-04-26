@@ -311,7 +311,7 @@ public class EzServer implements Runnable {
 					//else do service on the connection
 					numberOfThreads ++;
 				
-					System.out.println("threads + "+ numberOfThreads+"created");
+					System.out.println("threads "+ numberOfThreads+" created");
 					
 					this.blockedIP.put(incomingIP, new Date());
 				

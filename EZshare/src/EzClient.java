@@ -30,6 +30,9 @@ public class EzClient {
 	private CommandLine cmd;
 	private HelpFormatter formatter;
 	
+	//default timeout time (5s)
+	public static final int TIMEOUT = 5000;
+	
 	public EzClient(String[] args,boolean query)throws NullPointerException, IOException{
 		this.args = args; 
 		this.query_relay = query;
@@ -296,6 +299,7 @@ public class EzClient {
 			//String host = "sunrise.cis.unimelb.edu.au";
 			
 		    s = new Socket(hostname,port);  
+		    s.setSoTimeout(TIMEOUT);
 		    System.out.println("Connection Established");
 		    DataInputStream in = new DataInputStream( s.getInputStream());
 		    DataOutputStream out =new DataOutputStream( s.getOutputStream());
