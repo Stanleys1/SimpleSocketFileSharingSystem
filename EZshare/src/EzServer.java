@@ -43,6 +43,10 @@ public class EzServer implements Runnable {
 	
 	//default connection interval time
 	public static final int DEFAULTINTERVAL = 1000;
+	
+	public static final int DEFAULTSECRETLENGTH = 25;
+	
+	public static final int DEFAULTVARIABLELENGTH = 10;
 	private int exchangetime;
 	private int intervaltime;
 	private ArrayList<Resource> resources;
@@ -162,7 +166,7 @@ public class EzServer implements Runnable {
 	 */
 	private String generate_random_secret(){
 		Random random = new Random();
-		int stringLength = 25 + (int)(Math.random()*10);
+		int stringLength = DEFAULTSECRETLENGTH + (int)(Math.random()* DEFAULTVARIABLELENGTH);
 		System.out.println("secret length = "+ stringLength);
 		//possible chars in the secret
 		char[] possibleChar ="abcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
