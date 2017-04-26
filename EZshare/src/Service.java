@@ -78,7 +78,9 @@ public class Service extends Thread{
 				
 				if(resultSize2 != 0) {
 				
-				File f = new File("server_files/"+fileName);
+				//File f = new File("server_files/"+fileName);
+				URI u = new URI(uri);	
+				File f = new File(u);
 				if(f.exists()) {
 					
 					// Send this back to client so that they know what the file is.
@@ -127,7 +129,9 @@ public class Service extends Thread{
 			e.printStackTrace();
 		} catch (org.json.simple.parser.ParseException e) {
 			e.printStackTrace();
-		}finally{
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		} finally{
 			try{
 				clientSocket.close();
 			}catch(IOException e){
@@ -422,7 +426,7 @@ public class Service extends Thread{
 				//new resource is added into server resourceArray
 				if(!hasShared){
 					server.getResource().add(share_resource);
-					try {
+					/*try {
 						URI u = new URI(uri);
 						
 						File source = new File(u); 
@@ -435,7 +439,7 @@ public class Service extends Thread{
 						
 					} catch (IOException e) {
 					    e.printStackTrace();
-					}
+					} */
 				}
 			}
 			//sleep 1 second
