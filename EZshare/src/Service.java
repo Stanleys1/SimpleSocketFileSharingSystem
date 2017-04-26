@@ -54,7 +54,7 @@ public class Service extends Thread{
 	@Override
 	public void run(){
 		
-		System.out.println("get connection with " + clientSocket.getInetAddress() );
+		//System.out.println("get connection with " + clientSocket.getInetAddress() );
 		
 		try{
 			in = new DataInputStream(clientSocket.getInputStream());

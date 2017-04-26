@@ -291,7 +291,7 @@ public class EzServer implements Runnable {
 				
 				//get incoming ip
 				String incomingIP = clientSocket.getInetAddress().toString();
-				System.out.println(incomingIP);
+				//System.out.println(incomingIP);
 				
 				if(this.blockedIP.containsKey(incomingIP)){
 					Date now = new Date();
@@ -311,7 +311,7 @@ public class EzServer implements Runnable {
 					//else do service on the connection
 					numberOfThreads ++;
 				
-					System.out.println("threads +"+ numberOfThreads+"created");
+					System.out.println("threads + "+ numberOfThreads+"created");
 					
 					this.blockedIP.put(incomingIP, new Date());
 				
