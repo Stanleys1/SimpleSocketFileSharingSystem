@@ -166,7 +166,7 @@ public class EzServer implements Runnable {
 	 */
 	private String generate_random_secret(){
 		Random random = new Random();
-		int stringLength = DEFAULTSECRETLENGTH + (int)(Math.random()* DEFAULTVARIABLELENGTH);
+		int stringLength = DEFAULTSECRETLENGTH + random.nextInt(DEFAULTVARIABLELENGTH);
 		System.out.println("secret length = "+ stringLength);
 		//possible chars in the secret
 		char[] possibleChar ="abcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
