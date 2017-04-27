@@ -108,7 +108,7 @@ public class HelperFunction {
 			return s;
 		}
 		if(s != null){
-			String string = s.replaceAll("\0", "");
+			String string = s.replace("\\0", "");
 			return string.trim();
 		}
 		else return null;

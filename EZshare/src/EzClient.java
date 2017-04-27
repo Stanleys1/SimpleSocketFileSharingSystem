@@ -426,6 +426,7 @@ public class EzClient {
 		if(cmd.hasOption("name")){
 			name = HelperFunction.handleString(cmd.getOptionValue("name"));
 		}
+		
 		if(cmd.hasOption("description")){
 			description =HelperFunction.handleString(cmd.getOptionValue("description"));
 		}
