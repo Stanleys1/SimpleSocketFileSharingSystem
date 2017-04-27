@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.rmi.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +28,7 @@ public class EzClient {
 	private int port;
 	private boolean query_relay= false;
 	
+	private String uri2;
 	private String fileName2;
 	private CommandLine cmd;
 	private HelpFormatter formatter;
@@ -241,6 +244,7 @@ public class EzClient {
 					message.put("resourceTemplate",r.getJSON());
 					message.put("command","FETCH");
 					
+					uri2 = r.getUri();
 					fileName2 = getFileName(r.getUri());
 					
 					if(debug){
@@ -316,8 +320,11 @@ public class EzClient {
 		    	
 				
 				// Find out how much size is remaining to get from the server.
-				File f = new File("server_files/"+fileName2);
-				
+				//File f = new File("server_files/"+fileName2);
+		    	
+		    	
+		    	URI u = new URI(uri2);	
+				File f = new File(u);
 				if(f.exists()) {
 				// The file location
 				String fileName = "client_files/"+fileName2;
@@ -366,6 +373,8 @@ public class EzClient {
 			System.out.println("can't identify host name");
 			e.printStackTrace();
 			System.exit(0);
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
 		}
 		return data;
 	}
