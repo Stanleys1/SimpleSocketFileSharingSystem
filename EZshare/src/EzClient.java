@@ -71,7 +71,11 @@ public class EzClient {
 		
 	}
 	
-	
+	/**
+	 * generate options for possible json options in arguments 
+	 * @param 
+	 * @return options 
+	 */
 	private Options generateOptions(){
 		ArrayList<Option> op= new ArrayList<Option>();
 		
@@ -97,26 +101,21 @@ public class EzClient {
 		
 		
 		Options options = new Options();
-		
-		
 		for(int i = 0 ; i < op.size();i++){
 			options.addOption(op.get(i));
 		}
 		return options;
-		
 	}
-	
+	/**
+	 * construct the message sent to the server in form of JsonObject  
+	 * @param arguments
+	 * @return one JSONObject - message sent to server
+	 */
     private JSONObject generate_message(String[] args){
-		
-
 		JSONObject message = new JSONObject();
 		JSONArray exchange_servers= new JSONArray();
-
-		//CommandLine cmd;    Jason: cmd is also used in run() method
+		//CommandLine cmd; 
 		CommandLineParser parser = new DefaultParser();
-		
-		
-
 		try{
 			cmd = parser.parse(options, args);
 			Resource r = commands_getResource(cmd);
@@ -127,13 +126,14 @@ public class EzClient {
 				this.formatter.printHelp("Help", options);
 				System.exit(0);
 			}
+			//if there is not server host provided by arguments, print and then end this client
 			if(cmd.hasOption("host")){
 				this.hostname = cmd.getOptionValue("host");
 			}else{
 				System.out.println("no host provided");
 				System.exit(0);
 			}
-			
+			//if there is not server port provided by arguments, print and then end this client
 			if(cmd.hasOption("port")){
 				String portString = cmd.getOptionValue("port");
 				if(HelperFunction.IsInteger(portString)){
@@ -146,7 +146,7 @@ public class EzClient {
 				System.out.println("no port provided");
 				System.exit(0);
 			}
-			
+			//exchange command
 			if(cmd.hasOption("exchange")){
 				if(!cmd.hasOption("servers")){
 					System.out.println("servers must be present for exchange");
@@ -164,9 +164,7 @@ public class EzClient {
 				message.put("command", "EXCHANGE");
 				return message;
 			}
-			
-			//Resource r = Commands_GetResource(cmd);
-			
+			// publish command
 			if(cmd.hasOption("publish")){
 				if(r.getUri() == ""){
 					System.out.println("no uri with publish");
@@ -175,10 +173,9 @@ public class EzClient {
 					message.put("resource",r.getJSON());
 					message.put("command","PUBLISH");
 				}
-
 				return message;
 			}
-			
+			//remove command
 			if(cmd.hasOption("remove")){
 				if(r.getUri() == ""){
 					System.out.println("no uri with remove");
@@ -186,11 +183,10 @@ public class EzClient {
 				}else{
 					message.put("resource",r.getJSON());
 					message.put("command","REMOVE");
-
 					return message;
 				}
 			}
-			
+			//share command
 			if(cmd.hasOption("share")){
 				if(r.getUri() == ""){
 					System.out.println("no uri with share");
@@ -209,15 +205,14 @@ public class EzClient {
 				message.put("secret", share_secret);
 				return message;
 			}
-			
-			if(cmd.hasOption("query")){
-				
+			//query command
+			if(cmd.hasOption("query")){	
 				message.put("resourceTemplate",r.getJSON());
 				message.put("command","QUERY");
 				message.put("relay",query_relay);
 				return message;
 			}
-			
+			//fetch command
 			if(cmd.hasOption("fetch")){
 				if(r.getUri() == ""){
 					System.out.println("no uri with fetch");
@@ -228,36 +223,23 @@ public class EzClient {
 				}else{
 					message.put("resourceTemplate",r.getJSON());
 					message.put("command","FETCH");
-					
 					uri2 = r.getUri();
-					fileName2 = getFileName(r.getUri());
+					fileName2 = HelperFunction.getFileName(r.getUri());
 					return message;
 				}
 			}
-			
 		}catch(ParseException exception){
 			System.out.println("Parse error:");
 			exception.printStackTrace();
 		}
 		return message;
 	}
-    
-    private String getFileName(String f) {
-		String fileName = "";
-		String fileName2;
-		for(int i=(f.length()-1); i>-1; i--) {
-			char c = f.charAt(i);
-			
-			if(c == '/') {
-				break;
-			}
-			fileName = fileName + c;
-		}
-		fileName2 = new StringBuilder(fileName).reverse().toString();
-		
-		return fileName2;
-	}
-    
+    /**
+   	 * set chunk size  
+   	 * @param long- the size of remaining file
+   	 * @return the size of chunk,it is 1024*1024 if the size of remaining file is bigger,
+   	 * otherwise,it is the size of remaining file 
+   	 */
     public static int setChunkSize(long fileSizeRemaining){
 		// Determine the chunkSize
 		int chunkSize=1024*1024;
@@ -271,22 +253,23 @@ public class EzClient {
 		return chunkSize;
 	}
     
-
+    /**
+   	 * client run method  
+   	 * @param 
+   	 * @return the message received from the server 
+   	 */
 	public String run() throws IOException, NullPointerException {
 		String message = generate_message(args).toJSONString();
 		Socket s = null;
 	    String data="";
-
 		
 		try{
-			//InetAddress host = InetAddress.getLocalHost(); //jason
-			//String host = "sunrise.cis.unimelb.edu.au";
-			
 		    s = new Socket(hostname,port);  
 		    s.setSoTimeout(TIMEOUT);
 		    System.out.println("Connection Established");
 		    DataInputStream in = new DataInputStream( s.getInputStream());
 		    DataOutputStream out =new DataOutputStream( s.getOutputStream());
+		    
 		    if(debug){
 		    	 System.out.println("SENT:"+message); 
 		    }else{
@@ -298,15 +281,8 @@ public class EzClient {
 		    
 		    data = in.readUTF();// read a line of data from the stream
 		    
-		    
+		    // downloading file for fetch command
 		    if(cmd.hasOption("fetch")) {
-		    	
-		    	
-				
-				// Find out how much size is remaining to get from the server.
-				//File f = new File("server_files/"+fileName2);
-		    	
-		    	
 		    	URI u = new URI(uri2);	
 				File f = new File(u);
 				if(f.exists()) {
@@ -347,7 +323,6 @@ public class EzClient {
 				downloadingFile.close();
 				}
 		    }
-		     
 		    s.close();
 		}catch(UnknownHostException e){
 			System.out.println("can't identify host name");

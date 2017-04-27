@@ -75,7 +75,11 @@ public class HelperFunction {
 			return false;
 		}
 	}
-	
+	/**
+	 * check if the string is a file name,beginning with 'file'
+	 * @param s
+	 * @return true if it is a file name, false otherwise
+	 */
 	public static boolean isFileName(String s){
 		try {
 			File file = new File(s); 
@@ -124,6 +128,23 @@ public class HelperFunction {
 		else return null;
 		
 	}
-	
+	  /**
+		 * get the directory for fetching file to client  
+		 * @param String r- uri in argument
+		 * @return the directory where the downloaded file is stored
+		 */
+	public static String getFileName(String f) {
+		String fileName = "";
+		String fileName2;
+		for(int i=(f.length()-1); i>-1; i--) {
+			char c = f.charAt(i);
+			if(c == '/') {
+				break;
+				}
+			fileName = fileName + c;
+			}
+			fileName2 = new StringBuilder(fileName).reverse().toString();
+			return fileName2;
+		}
 
 }

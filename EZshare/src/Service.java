@@ -51,11 +51,13 @@ public class Service extends Thread{
 		this.start();
 	}
 	
-	@Override
+	/**
+	 * service's run method 
+	 * 
+	 * @param 
+	 * @return  
+	 */
 	public void run(){
-		
-		//System.out.println("get connection with " + clientSocket.getInetAddress() );
-		
 		try{
 			in = new DataInputStream(clientSocket.getInputStream());
 			out = new DataOutputStream(clientSocket.getOutputStream());
@@ -63,38 +65,25 @@ public class Service extends Thread{
 			if(debug){
 				System.out.println("RECEIVED:"+ input);
 			}
-			
 			String output = JSONOperator(input);
 			if(debug){
 				System.out.println("SENT:"+ output);
 			}
-			
+
 			out.writeUTF(output);
 			
 			if(command.equals("FETCH")) {
-				
-				
-				System.out.println("________"+ fileName);
-				
+				System.out.println("________"+ fileName);	
 				if(resultSize2 != 0) {
-				
-				//File f = new File("server_files/"+fileName);
-				URI u = new URI(uri);	
-				File f = new File(u);
-				if(f.exists()) {
-					
+					URI u = new URI(uri);	
+					File f = new File(u);
+					if(f.exists()) {
 					// Send this back to client so that they know what the file is.
 					JSONObject trigger = new JSONObject();
 					trigger.put("command_name", "SENDING_FILE");
 					trigger.put("file_name",fileName);
 					trigger.put("file_size",f.length());
 					try {
-						// Send trigger to client
-						
-						//out.writeUTF(trigger.toJSONString());
-						
-						//fetchMessage.append(trigger.toJSONString()+"\n");
-						
 						// Start sending file
 						RandomAccessFile byteFile = new RandomAccessFile(f,"r");
 						byte[] sendingBuffer = new byte[1024*1024];
@@ -104,9 +93,6 @@ public class Service extends Thread{
 							System.out.println(num);
 							
 							  out.write(Arrays.copyOf(sendingBuffer, num));
-							 
-							//fetchMessage.append(Arrays.copyOf(sendingBuffer, num)+"\n");
-							
 						}
 						byteFile.close();
 					} catch (IOException e) {
@@ -141,11 +127,15 @@ public class Service extends Thread{
 		
 	}
 	
-	
-	
-	// Need to change,  JSON parsing
-		private String JSONOperator(String js) throws ParseException, org.json.simple.parser.ParseException {
-			
+
+	/**
+	 * dealing with  commands from client 
+	 * parse client's message to one JsonObject then choose different routes according to different commands
+	 * @param message from the client
+	 * @return response message for the command 
+	 */
+		private String JSONOperator(String js) 
+				throws ParseException, org.json.simple.parser.ParseException {
 			JSONObject obj;
 			JSONObject rcs;
 			JSONObject rcsTemplate;
@@ -160,82 +150,29 @@ public class Service extends Thread{
 			}catch(ClassCastException e){
 				return generate_error_message("missing command");
 			}
-			/*
-			if(command.equals("SHARE")){
-				
-				try{
-					rcs = (JSONObject)obj.get("resource");
-					
-					System.out.println(rcs.toJSONString());
-				}catch(NullPointerException e){
-					return generate_error_message("missing resource");
-				}catch(ClassCastException e){
-					return generate_error_message("missing resource");
-				}
-				if(!getResource(rcs)){
-					return generate_error_message("invalid resource");
-				}
-				
-				// check if it is a file
-				if(!HelperFunction.isFileScheme(uri)){
-					return generate_error_message("invalid File");
-				}
-				
-				
-				if(owner.equals("*")){
-					return generate_error_message("invalid resource");
-				}
-				
-				// check if secret value is given
-				secret =(String)obj.get("secret");
-				if(secret.equals("")){
-					return generate_error_message("missing resource and/or secret");
-				}
-				
-				// check if secret value is same as server secret
-				if(!secret.equals(server.getSecret())){
-					return generate_error_message("incorrect secret");
-				}
-				
-				message = share();
-				return message;
-			}
-			*/
-			
-			/* need to compare with the resources
-			 * on server
-			 * 
-			 */
+			//dealing with query command
 			if(command.equals("QUERY")){
 				boolean relay = false;
 				try{
 					relay = (boolean)obj.get("relay");
-					//System.out.println("relay  = "+ relay);
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
-					//System.out.println(rcsTemplate.toJSONString());
 				}catch(NullPointerException e){
 					return generate_error_message("missing resourceTemplate");
 				}catch(ClassCastException e){
 					return generate_error_message("missing resourceTemplate");
 				}
 				
-				
 				if(!getResource(rcsTemplate)){
 					return generate_error_message("invalid resourceTemplate");
 				}
-				
-				
 				message = query(relay);
 				return message;
-				
 			}
-			
+			//dealing with exchange command
 			if(command.equals("EXCHANGE")){
-				
 				sl = new JSONArray();
 				try{
 					sl = (JSONArray)obj.get("serverList");
-					//System.out.println(sl.toJSONString());
 				}catch(NullPointerException e){
 					return generate_error_message("missing or invalid server list");
 				}catch(ClassCastException e){
@@ -252,6 +189,8 @@ public class Service extends Thread{
 				return message;
 				
 			}
+			//deal with remove,publish,share commands, 
+			//these three commands share similar pre-check process
 			if(command.equals("REMOVE")||command.equals("PUBLISH")||command.equals("SHARE")){
 				try{
 					rcs = (JSONObject)obj.get("resource");
@@ -265,6 +204,7 @@ public class Service extends Thread{
 				if(!getResource(rcs)||owner.equals("*")){
 					return generate_error_message("invalid resource");
 				}
+				
 				switch (command){
 				case "REMOVE":
 					if(!HelperFunction.isURI(uri)){
@@ -298,10 +238,10 @@ public class Service extends Thread{
 				}
 				return message;
 			}
+			//dealing with fetch command
 			if(command.equals("FETCH")){
 				try{
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
-					//System.out.println(rcsTemplate.toJSONString());
 				}catch(NullPointerException e){
 					return generate_error_message("missing resourceTemplate");
 				}catch(ClassCastException e){
@@ -320,14 +260,10 @@ public class Service extends Thread{
 				if(!HelperFunction.isFileScheme(uri)){
 					return generate_error_message("invalid File");
 				}
-				
-				//rcsTemplate.put("resourceSize", "");
-				//System.out.println(rcsTemplate.toJSONString());
 				message = fetch();
 				return message;
 				
 			}
-			
 			return generate_error_message("invalid command");
 			
 		}
@@ -400,13 +336,11 @@ public class Service extends Thread{
 		 */
 
 		private String share(){
-			JSONObject obj;
-			
 			Resource share_resource=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
 			boolean hasShared=false;
 			
-			shareFileName = getFileName(uri);
+			shareFileName = HelperFunction.getFileName(uri);
 			System.out.println("________"+ shareFileName);
 			synchronized(server.getResource()){
 				for (int i=0;i<server.getResource().size();i++){
@@ -426,20 +360,6 @@ public class Service extends Thread{
 				//new resource is added into server resourceArray
 				if(!hasShared){
 					server.getResource().add(share_resource);
-					/*try {
-						URI u = new URI(uri);
-						
-						File source = new File(u); 
-						File dest = new File("server_files/"+shareFileName);
-						//FileUtils.copyDirectory(source, dest);
-						FileUtils.copyFile(source, dest);
-						
-					} catch (URISyntaxException e) {
-						// error
-						
-					} catch (IOException e) {
-					    e.printStackTrace();
-					} */
 				}
 			}
 			//sleep 1 second
@@ -448,10 +368,7 @@ public class Service extends Thread{
 			}catch(InterruptedException e){
 				e.printStackTrace();
 			}
-			
 			return generate_success_message();
-			
-			//return "share";
 		}
 		/*
 		 * remove command has two possible choices
@@ -485,6 +402,12 @@ public class Service extends Thread{
 			}
 			return generate_success_message();
 		}
+		/**
+		 * dealing with exchange command 
+		 * add servers' information to the server's records for exchanging with other servers per certain time
+		 * @param 
+		 * @return response message for one exchange command 
+		 */
 		private String exchange(String[] serverlist){
 			boolean duplicate = false;
 			boolean isThisServer = false;
@@ -514,7 +437,6 @@ public class Service extends Thread{
 						records.add(serverlist[i]);
 						}
 					}
-				//System.out.println(serverlist[i]);
 				//sleep 1 seconds
 				try{
 					sleep(1000);
@@ -525,9 +447,12 @@ public class Service extends Thread{
 			return generate_success_message();
 		}
 		
-		/*
-		 * Using the same technique as Query
-		 * Additional things: put resourceSize
+		/**
+		 * dealing with fetch command 
+		 * traverse the server's resource list 
+		 * then find target resource according to the resource template
+		 * @param 
+		 * @return response message for one fetch command 
 		 */
 		private String fetch(){
 			
@@ -535,8 +460,11 @@ public class Service extends Thread{
 			JSONObject response = new JSONObject();
 			StringBuilder fetchMessage = new StringBuilder();
 			JSONObject resource;
+			//the resource template 
 			Resource template=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
+			// traverse the server's resource list and
+			// find target resources according to the resource template
 			synchronized(server.getResource()){
 				ArrayList<Resource> resources = server.getResource();
 				for(int i = 0 ; i< resources.size();i++){
@@ -544,7 +472,7 @@ public class Service extends Thread{
 						resource = resources.get(i).getResourceWithServer
 								(server.getHostName(),server.getPort()).getStarOwner().getJSON();
 						
-						fileName = getFileName(resources.get(i).getUri());
+						fileName = HelperFunction.getFileName(resources.get(i).getUri());
 						
 						response.put("response", "success");
 						fetchMessage.append(response.toJSONString()+"\n");
@@ -561,7 +489,7 @@ public class Service extends Thread{
 				e.printStackTrace();
 			}
 			JSONObject result = new JSONObject();
-			
+			//add the information of file's size 
 			result.put("resultSize", resultSize2);
 			fetchMessage.append(result.toJSONString());
 			
@@ -570,7 +498,12 @@ public class Service extends Thread{
 			
 		}
 		
-		//do query
+		/**
+		 * dealing with query command 
+		 * @param boolean query¡ªrelay, 
+		 *  if true, need to query the server in server records, otherwise not need
+		 * @return response message for one query command 
+		 */
 		private String query(boolean relay){
 			//result size of query
 			int resultSize = 0;
@@ -583,8 +516,6 @@ public class Service extends Thread{
 			response.put("response", "success");
 			querymessage.append(response.toJSONString()+"\n");
 			JSONObject resource;
-			
-			
 			
 			//create template from the client arguments
 			Resource template=new Resource(name, tagsString, description,
@@ -604,8 +535,6 @@ public class Service extends Thread{
 					}
 				}
 			}
-			
-			
 			//if there is a need for query relay
 			if(relay){
 				synchronized(server.getServerRecord()){
@@ -618,8 +547,6 @@ public class Service extends Thread{
 						String serverString[] = records.get(i).split(":");
 						String serverHost = serverString[0];
 						int serverPort = Integer.parseInt(serverString[1]);
-						
-						
 						//build a argument for client
 						String serverArgument = "-query -host "+serverHost+" -port "+ serverPort;
 						StringBuilder b = new StringBuilder();
@@ -640,15 +567,6 @@ public class Service extends Thread{
 								b.append(" "+tagsString[j]);
 							}
 						}
-						
-						//Owner and Channel are directly set to "" 
-						//in the query relay since 
-						//both fields are not provided to the argument for the client
-						
-						
-						//System.out.println("relay to with args"+ b.toString());
-						
-						
 						//add the arguments into the client
 						try{
 							//set relay argument to false
@@ -684,7 +602,11 @@ public class Service extends Thread{
 			return querymessage.toString();
 		}
 
-		
+		/**
+		 * generate response error message 
+		 * @param detailed error information
+		 * @return an error message
+		 */
 		private String generate_error_message(String s){
 			JSONObject msg = new JSONObject();
 			msg.put("response", "error");
@@ -699,28 +621,27 @@ public class Service extends Thread{
 			msg.put("response", "success");
 			return msg.toJSONString();
 		}
+		/**
+		 * parse serverlist storing in one JsonArray sent by client and get servers list for exchange command 
+		 * @param one JSONArray containing the content of servers list
+		 * @return StringArray storing server list for exchange command
+		 */
 		private String[] getServerList(JSONArray sl) {
 			ArrayList<String> serverlist = new ArrayList<String>();
 			String[] error = {};
 			try{
 				for(int i = 0 ; i< sl.size();i++){
-					JSONObject host = (JSONObject) sl.get(i);    // need to change, cannot identify
+					JSONObject host = (JSONObject) sl.get(i);
 					String hostname = (String) host.get("hostname");
 					long port = (long) host.get("port");
-					//System.out.println("hostname: "+hostname+"port: "+port);
 					StringBuilder b = new StringBuilder();
-					
-					/*
-					 * if localhost, change hostname to ip address
-					 */
+
 					try {
 					if(hostname.equals("localhost")) {
-						//System.out.println("localhost");
 						InetAddress host2 = InetAddress.getLocalHost();
-						//System.out.println(host2);
 						hostname = host2.getHostAddress();
-						//System.out.println("localhost finish");
-					} }
+						}
+					}
 					catch(UnknownHostException e){
 						System.out.println("can't identify host name");
 						e.printStackTrace();
@@ -733,8 +654,6 @@ public class Service extends Thread{
 					System.out.println(b.toString());
 					serverlist.add(b.toString());
 				}
-				
-				
 			}catch(NullPointerException e){
 				return error;
 			}catch(ClassCastException e){
@@ -747,7 +666,11 @@ public class Service extends Thread{
 			return success;
 		}
 		
-		
+		/**
+		 * parse JsonObject sent by client and get resource 's variables 
+		 * @param one JSONObject containing the content of one resource or resource template
+		 * @return false if it catches an exception, otherwise true
+		 */
 		private boolean getResource(JSONObject rcs){
 			try{
 				uri = (String) rcs.get("uri");
@@ -779,24 +702,5 @@ public class Service extends Thread{
 			taglist.toArray(tagsString);
 			
 			return true;
-			
 		}
-		
-		private String getFileName(String f) {
-			String fileName = "";
-			String fileName2;
-			for(int i=(f.length()-1); i>-1; i--) {
-				char c = f.charAt(i);
-				
-				if(c == '/') {
-					break;
-				}
-				fileName = fileName + c;
-			}
-			fileName2 = new StringBuilder(fileName).reverse().toString();
-			
-			return fileName2;
-		}
-	
-
 }
