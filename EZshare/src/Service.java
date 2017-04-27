@@ -61,12 +61,12 @@ public class Service extends Thread{
 			out = new DataOutputStream(clientSocket.getOutputStream());
 			String input = in.readUTF();
 			if(debug){
-				System.out.println(input);
+				System.out.println("RECEIVED:"+ input);
 			}
 			
 			String output = JSONOperator(input);
 			if(debug){
-				System.out.println(output);
+				System.out.println("SENT:"+ output);
 			}
 			
 			out.writeUTF(output);
@@ -274,7 +274,7 @@ public class Service extends Thread{
 					message = remove();
 					break;
 				case "PUBLISH":
-					if(!HelperFunction.isURI(uri)||HelperFunction.isFileScheme(uri)){
+					if(!HelperFunction.isURI(uri) || HelperFunction.isFileName(uri)){
 						return generate_error_message("invalid resource");
 					}
 					message = publish();
