@@ -103,6 +103,10 @@ public class HelperFunction {
 	 * @return trimmed handled string
 	 */
 	public static String handleString(String s){
+		if(s.equals("*")){
+			s = "";
+			return s;
+		}
 		if(s != null){
 			String string = s.replaceAll("\0", "");
 			return string.trim();
