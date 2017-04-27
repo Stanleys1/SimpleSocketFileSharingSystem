@@ -187,6 +187,7 @@ public class EzServer implements Runnable {
 		CommandLineParser parser = new DefaultParser();
 		try{
 			//parse args
+			System.out.println("Starting the EZShare Server");
 			cmd = parser.parse(options, args);
 			
 			if(cmd.hasOption("help")){

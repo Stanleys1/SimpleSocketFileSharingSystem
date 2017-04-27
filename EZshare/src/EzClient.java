@@ -27,6 +27,7 @@ public class EzClient {
 	private String hostname;
 	private int port;
 	private boolean query_relay= false;
+	boolean debug = false;
 	
 	private String uri2;
 	private String fileName2;
@@ -58,7 +59,7 @@ public class EzClient {
 		try{
 			EzClient client = new EzClient(args,true);
 			String response =client.run();
-			System.out.println("RECEIVED: "+response);
+
 		}catch(NullPointerException e){
 			System.out.println("null pointer in client found");
 			e.printStackTrace();
@@ -107,7 +108,7 @@ public class EzClient {
 	
     private JSONObject generate_message(String[] args){
 		
-		boolean debug = false;
+
 		JSONObject message = new JSONObject();
 		JSONArray exchange_servers= new JSONArray();
 
@@ -159,13 +160,8 @@ public class EzClient {
 				}
 				String [] serversArray=servers.split(",");
 				exchange_servers=exchange_getServerList(serversArray);
-				
-				
 				message.put("serverList", exchange_servers);
 				message.put("command", "EXCHANGE");
-				if(debug){
-					System.out.println(message.toJSONString());
-				}
 				return message;
 			}
 			
@@ -179,9 +175,7 @@ public class EzClient {
 					message.put("resource",r.getJSON());
 					message.put("command","PUBLISH");
 				}
-				if(debug){
-					System.out.println(message.toJSONString());
-				}
+
 				return message;
 			}
 			
@@ -192,9 +186,7 @@ public class EzClient {
 				}else{
 					message.put("resource",r.getJSON());
 					message.put("command","REMOVE");
-					if(debug){
-						System.out.println(message.toJSONString());
-					}
+
 					return message;
 				}
 			}
@@ -215,9 +207,6 @@ public class EzClient {
 				message.put("resource",r.getJSON());
 				message.put("command","SHARE");
 				message.put("secret", share_secret);
-				if(debug){
-					System.out.println(message.toJSONString());
-				}
 				return message;
 			}
 			
@@ -226,9 +215,6 @@ public class EzClient {
 				message.put("resourceTemplate",r.getJSON());
 				message.put("command","QUERY");
 				message.put("relay",query_relay);
-				if(debug){
-					System.out.println(message.toJSONString());
-				}
 				return message;
 			}
 			
@@ -245,10 +231,6 @@ public class EzClient {
 					
 					uri2 = r.getUri();
 					fileName2 = getFileName(r.getUri());
-					
-					if(debug){
-						System.out.println(message.toJSONString());
-					}
 					return message;
 				}
 			}
@@ -305,7 +287,9 @@ public class EzClient {
 		    System.out.println("Connection Established");
 		    DataInputStream in = new DataInputStream( s.getInputStream());
 		    DataOutputStream out =new DataOutputStream( s.getOutputStream());
-		    System.out.println("SENT:"+message); 
+		    if(debug){
+		    	 System.out.println("SENT:"+message); 
+		    }
 		    out.writeUTF(message); // UTF is a string encoding see Sn. 4.4
 		    
 		    out.flush();
@@ -369,6 +353,9 @@ public class EzClient {
 			System.exit(0);
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
+		}
+		if(debug){
+			System.out.println("RECEIVED:"+data);
 		}
 		return data;
 	}
