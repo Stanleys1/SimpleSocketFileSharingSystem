@@ -419,29 +419,30 @@ public class EzClient {
 		String ezserver=null;
 		
 		if(cmd.hasOption("name")){
-			name = cmd.getOptionValue("name");
+			name = HelperFunction.handleString(cmd.getOptionValue("name"));
 		}
+		
 		if(cmd.hasOption("description")){
-			description = cmd.getOptionValue("description");
+			description =HelperFunction.handleString(cmd.getOptionValue("description"));
 		}
 		
 		if(cmd.hasOption("uri")){
-			uri = cmd.getOptionValue("uri");
+			uri = HelperFunction.handleString(cmd.getOptionValue("uri"));
 		}
 		
 		if(cmd.hasOption("owner")){
-			owner = cmd.getOptionValue("owner");
+			owner = HelperFunction.handleString(cmd.getOptionValue("owner"));
 		}
 		
 		if(cmd.hasOption("channel")){
-			channel =cmd.getOptionValue("channel");
+			channel = HelperFunction.handleString(cmd.getOptionValue("channel"));
 		}
 		
 		if(cmd.hasOption("tags")){
 			tags = cmd.getOptionValues("tags");
-		}
-		if(cmd.hasOption("ezserver")){
-			tags = cmd.getOptionValues("ezserver");
+			for(int i = 0 ; i < tags.length; i++){
+				tags[i]= HelperFunction.handleString(tags[i]);
+			}
 		}
 		Resource r = new Resource(name,tags,description,
 				uri,channel,owner,ezserver);
