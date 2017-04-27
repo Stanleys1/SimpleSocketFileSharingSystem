@@ -274,7 +274,7 @@ public class Service extends Thread{
 					message = remove();
 					break;
 				case "PUBLISH":
-					if(!HelperFunction.isURI(uri)||HelperFunction.isFileScheme(uri)){
+					if(!HelperFunction.isURI(uri) || HelperFunction.isFileName(uri)){
 						return generate_error_message("invalid resource");
 					}
 					message = publish();

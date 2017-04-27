@@ -58,7 +58,7 @@ public class EzClient {
 		try{
 			EzClient client = new EzClient(args,true);
 			String response =client.run();
-			System.out.println("response from server = "+response);
+			System.out.println("RECEIVED: "+response);
 		}catch(NullPointerException e){
 			System.out.println("null pointer in client found");
 			e.printStackTrace();
@@ -293,7 +293,6 @@ public class EzClient {
 
 	public String run() throws IOException, NullPointerException {
 		String message = generate_message(args).toJSONString();
-		System.out.println(message.toString());
 		Socket s = null;
 	    String data="";
 
@@ -307,7 +306,7 @@ public class EzClient {
 		    System.out.println("Connection Established");
 		    DataInputStream in = new DataInputStream( s.getInputStream());
 		    DataOutputStream out =new DataOutputStream( s.getOutputStream());
-		    System.out.println("SENT!"); 
+		    System.out.println("SENT:"+message); 
 		    out.writeUTF(message); // UTF is a string encoding see Sn. 4.4
 		    
 		    out.flush();
@@ -361,14 +360,10 @@ public class EzClient {
 				}
 				System.out.println("File received!");
 				downloadingFile.close();
-		    	
-		    } }
-		    
-		    System.out.println("RECEIVED!") ; 
+				}
+		    }
+		     
 		    s.close();
-		    
-    
-		    
 		}catch(UnknownHostException e){
 			System.out.println("can't identify host name");
 			e.printStackTrace();

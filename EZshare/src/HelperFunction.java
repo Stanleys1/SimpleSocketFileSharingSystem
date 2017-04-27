@@ -76,6 +76,19 @@ public class HelperFunction {
 		}
 	}
 	
+	public static boolean isFileName(String s){
+		try {
+			File file = new File(s); 
+			if(s.substring(0, 4).toLowerCase().equals("file")){
+				return true;
+			}
+			return false;
+			//return !isWeb;
+		} catch (Exception e){
+			return false;
+		}
+	}
+	
 	/**
 	 * get the filesize of a URI file scheme string
 	 * @param s 
