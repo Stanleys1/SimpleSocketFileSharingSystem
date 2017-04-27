@@ -61,12 +61,12 @@ public class Service extends Thread{
 			out = new DataOutputStream(clientSocket.getOutputStream());
 			String input = in.readUTF();
 			if(debug){
-				System.out.println(input);
+				System.out.println("RECEIVED:"+ input);
 			}
 			
 			String output = JSONOperator(input);
 			if(debug){
-				System.out.println(output);
+				System.out.println("SENT:"+ output);
 			}
 			
 			out.writeUTF(output);

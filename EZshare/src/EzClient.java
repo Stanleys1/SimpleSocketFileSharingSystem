@@ -137,7 +137,6 @@ public class EzClient {
 				String portString = cmd.getOptionValue("port");
 				if(HelperFunction.IsInteger(portString)){
 					this.port = Integer.parseInt(portString);
-					System.out.println(port);
 				}else{
 					System.out.println("port given is not a number");
 					System.exit(0);

@@ -266,7 +266,7 @@ public class EzServer implements Runnable {
 					host = "";
 				}
 			}
-			
+			System.out.println("using advertisedhostname:"+ host);
 			
 			
 		}catch(ParseException exception){
@@ -295,7 +295,7 @@ public class EzServer implements Runnable {
 				
 				//get incoming ip
 				String incomingIP = clientSocket.getInetAddress().toString();
-				//System.out.println(incomingIP);
+				System.out.println("connection request from "+ incomingIP);
 				
 				if(this.blockedIP.containsKey(incomingIP)){
 					Date now = new Date();
@@ -310,6 +310,7 @@ public class EzServer implements Runnable {
 				
 				//reject connection if blocked
 				if(blocked){
+					System.out.println("this ip is in connection interval limit");
 					clientSocket.close();
 				}else{
 					//else do service on the connection
