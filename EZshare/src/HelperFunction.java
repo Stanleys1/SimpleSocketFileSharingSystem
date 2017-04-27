@@ -71,6 +71,8 @@ public class HelperFunction {
 			//return !isWeb;
 		} catch (URISyntaxException e) {
 			return false;
+		} catch (IllegalArgumentException e){
+			return false;
 		}
 	}
 	
