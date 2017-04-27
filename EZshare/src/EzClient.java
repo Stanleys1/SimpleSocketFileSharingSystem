@@ -289,6 +289,8 @@ public class EzClient {
 		    DataOutputStream out =new DataOutputStream( s.getOutputStream());
 		    if(debug){
 		    	 System.out.println("SENT:"+message); 
+		    }else{
+		    	System.out.println("please use -debug in commands for more debug information");
 		    }
 		    out.writeUTF(message); // UTF is a string encoding see Sn. 4.4
 		    
