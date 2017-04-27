@@ -542,7 +542,7 @@ public class Service extends Thread{
 				for(int i = 0 ; i< resources.size();i++){
 					if(resources.get(i).match_template(template)){
 						resource = resources.get(i).getResourceWithServer
-								(server.getHostName(),server.getPort()).getJSON();
+								(server.getHostName(),server.getPort()).getStarOwner().getJSON();
 						
 						fileName = getFileName(resources.get(i).getUri());
 						
@@ -595,7 +595,8 @@ public class Service extends Thread{
 					//if resource match template, add to the query message
 					if(resources.get(i).match_template(template)){
 						resource = resources.get(i).getResourceWithServer
-								(server.getHostName(),server.getPort()).getJSON();
+								(server.getHostName(),server.getPort()).getStarOwner().getJSON();
+						
 						querymessage.append(resource+"\n");
 						//add result size
 						resultSize ++;

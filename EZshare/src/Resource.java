@@ -172,4 +172,15 @@ public class Resource {
 		return this;
 	}
 	
+	public Resource getStarOwner(){
+		
+		if(!this.owner.equals("")) {
+			this.owner= "*";
+			return this;
+		} else {
+			return this;
+		}
+		
+	}
+	
 }
