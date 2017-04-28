@@ -409,7 +409,7 @@ public class EzServer implements Runnable {
 					String[] arguments = argument.split(" ");
 					try{
 						//create client to run and get the response
-						EzClient c = new EzClient (arguments,false);
+						EzClient c = new EzClient (arguments,false,true);
 						String response = c.run();
 						System.out.println(response);
 					}catch(NullPointerException e){

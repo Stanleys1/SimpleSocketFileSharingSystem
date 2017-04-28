@@ -570,7 +570,7 @@ public class Service extends Thread{
 						//add the arguments into the client
 						try{
 							//set relay argument to false
-							EzClient c = new EzClient(b.toString().split(" "),false);
+							EzClient c = new EzClient(b.toString().split(" "),false,true);
 							String serverResponse =c.run();
 							
 							//get the response and add it to querymessage

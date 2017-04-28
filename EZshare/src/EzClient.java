@@ -27,7 +27,8 @@ public class EzClient {
 	private String hostname;
 	private int port;
 	private boolean query_relay= false;
-	boolean debug = false;
+	boolean debug;
+	boolean timeout;
 	
 	private String uri2;
 	private String fileName2;
@@ -37,11 +38,12 @@ public class EzClient {
 	//default timeout time (5s)
 	public static final int TIMEOUT = 5000;
 	
-	public EzClient(String[] args,boolean query)throws NullPointerException, IOException{
+	public EzClient(String[] args,boolean query, boolean timeout)throws NullPointerException, IOException{
 		this.args = args; 
 		this.query_relay = query;
 		this.options = generateOptions();
 		this.formatter = new HelpFormatter();
+		this.timeout = timeout;
 	}
 	
 	public static void main (String[] args){
@@ -57,7 +59,7 @@ public class EzClient {
 		}
 		
 		try{
-			EzClient client = new EzClient(args,true);
+			EzClient client = new EzClient(args,true,false);
 			String response =client.run();
 
 		}catch(NullPointerException e){
@@ -265,7 +267,9 @@ public class EzClient {
 		
 		try{
 		    s = new Socket(hostname,port);  
-		    s.setSoTimeout(TIMEOUT);
+		    if(timeout){
+		    	s.setSoTimeout(TIMEOUT);
+		    }
 		    System.out.println("Connection Established");
 		    DataInputStream in = new DataInputStream( s.getInputStream());
 		    DataOutputStream out =new DataOutputStream( s.getOutputStream());
