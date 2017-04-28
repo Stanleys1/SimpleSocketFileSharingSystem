@@ -1,3 +1,5 @@
+package EZShare;
+
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -46,6 +48,8 @@ public class EzServer implements Runnable {
 	
 	public static final int DEFAULTSECRETLENGTH = 25;
 	
+	public static final int DEFAULTPORT = 3780;
+	
 	public static final int DEFAULTVARIABLELENGTH = 10;
 	private int exchangetime;
 	private int intervaltime;
@@ -61,22 +65,6 @@ public class EzServer implements Runnable {
 	private HashMap<String,Date> blockedIP;
 	private HelpFormatter formatter;
 	
-	public static void main (String[] args){
-		//args must be present
-		if(args.length==0){
-			System.out.println("please enter at least one command (port)");
-			System.exit(0);
-		}
-		//commands must start with -
-		if(!args[0].startsWith("-")){
-			System.out.println("commands for server must start with '-'");
-			System.exit(0);
-		}
-		//create server
-		EzServer server = new EzServer(args);
-		//run server
-		server.run();
-	}
 	
 	/**
 	 * create new server
@@ -226,8 +214,7 @@ public class EzServer implements Runnable {
 					System.exit(0);
 				}
 			}else{
-				System.out.println("no port value is given");
-				System.exit(0);
+				port = DEFAULTPORT;
 			}
 			
 			//get the secret
