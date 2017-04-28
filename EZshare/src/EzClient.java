@@ -336,9 +336,9 @@ public class EzClient {
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
-		if(debug){
-			System.out.println("RECEIVED:"+data);
-		}
+		
+		System.out.println("RECEIVED:"+data);
+		
 		return data;
 	}
 	/*
