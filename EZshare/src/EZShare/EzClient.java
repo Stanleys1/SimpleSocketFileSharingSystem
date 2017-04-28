@@ -268,7 +268,7 @@ public class EzClient {
 				File f = new File(u);
 				if(f.exists()) {
 				// The file location
-				String fileName = "client_files/"+fileName2;
+				String fileName = fileName2;
 					
 				// Create a RandomAccessFile to read and write the output file.
 				RandomAccessFile downloadingFile = new RandomAccessFile(fileName, "rw");
