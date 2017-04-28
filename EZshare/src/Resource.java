@@ -175,8 +175,7 @@ public class Resource {
 	public Resource getStarOwner(){
 		
 		if(!this.owner.equals("")) {
-			this.owner= "*";
-			return this;
+			return new Resource(name, tags,description,uri,channel,"*",ezserver);
 		} else {
 			return this;
 		}
