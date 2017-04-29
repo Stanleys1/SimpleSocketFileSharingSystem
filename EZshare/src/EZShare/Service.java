@@ -499,6 +499,7 @@ public class Service extends Thread{
 			ArrayList<String> response = new ArrayList<String>();
 			
 			JSONObject resource;
+			response.add(this.generate_success_message());
 			//the resource template 
 			Resource template=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
@@ -513,7 +514,7 @@ public class Service extends Thread{
 						
 						fileName = HelperFunction.getFileName(resources.get(i).getUri());
 						
-						response.add(this.generate_success_message());
+						
 						resource.put("resourceSize", HelperFunction.fileSize(uri));
 						response.add(resource.toJSONString());
 						resultSize2 ++;
