@@ -397,8 +397,10 @@ public class EzServer implements Runnable {
 					try{
 						//create client to run and get the response
 						EzClient c = new EzClient (arguments,false,true);
-						String response = c.run();
-						System.out.println(response);
+						ArrayList<String> response = c.run();
+						for(int i = 0; i<response.size();i++){
+							System.out.println(response.get(i));
+						}
 					}catch(NullPointerException e){
 						//if any exception found during connection, remove the address
 						System.out.println("null pointer found");

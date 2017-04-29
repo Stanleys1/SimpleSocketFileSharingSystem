@@ -36,6 +36,7 @@ public class Service extends Thread{
 	private String command;
 	private boolean debug;
 	
+	
 	private int resultSize2;
 	private long fileSize;
 	private String fileName;
@@ -67,12 +68,14 @@ public class Service extends Thread{
 			if(debug){
 				System.out.println("RECEIVED:"+ input);
 			}
-			String output = JSONOperator(input);
-			if(debug){
-				System.out.println("SENT:"+ output);
+			ArrayList<String> output = JSONOperator(input);
+			
+			for(int i = 0 ; i<output.size();i++){
+				if(debug){
+					System.out.println("SENT:"+ output.get(i));
+				}
+				out.writeUTF(output.get(i));
 			}
-
-			out.writeUTF(output);
 			
 			if(command.equals("FETCH")) {
 				System.out.println("________"+ fileName);	
@@ -136,21 +139,24 @@ public class Service extends Thread{
 	 * @param message from the client
 	 * @return response message for the command 
 	 */
-		private String JSONOperator(String js) 
+		private ArrayList<String> JSONOperator(String js) 
 				throws ParseException, org.json.simple.parser.ParseException {
+			
+			ArrayList<String> response = new ArrayList<String>();
 			JSONObject obj;
 			JSONObject rcs;
 			JSONObject rcsTemplate;
 			JSONArray sl;
-			String message = ""; //Jason
 			JSONParser parser = new JSONParser();
 			obj = (JSONObject)parser.parse(js);
 			try{
 				command =(String)obj.get("command");
 			}catch(NullPointerException e){
-				return generate_error_message("missing command");
+				response.add(generate_error_message("missing command"));
+				return response;
 			}catch(ClassCastException e){
-				return generate_error_message("missing command");
+				response.add(generate_error_message("missing command"));
+				return response;
 			}
 			//dealing with query command
 			if(command.equals("QUERY")){
@@ -159,16 +165,19 @@ public class Service extends Thread{
 					relay = (boolean)obj.get("relay");
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
 				}catch(NullPointerException e){
-					return generate_error_message("missing resourceTemplate");
+					response.add(generate_error_message("missing resourceTemplate"));
+					return response ;
 				}catch(ClassCastException e){
-					return generate_error_message("missing resourceTemplate");
+					response.add(generate_error_message("missing resourceTemplate"));
+					return response ;
 				}
 				
 				if(!getResource(rcsTemplate)){
-					return generate_error_message("invalid resourceTemplate");
+					response.add(generate_error_message("invalid resourceTemplate"));
+					return response ;
 				}
-				message = query(relay);
-				return message;
+				response = query(relay);
+				return response;
 			}
 			//dealing with exchange command
 			if(command.equals("EXCHANGE")){
@@ -176,19 +185,22 @@ public class Service extends Thread{
 				try{
 					sl = (JSONArray)obj.get("serverList");
 				}catch(NullPointerException e){
-					return generate_error_message("missing or invalid server list");
+					response.add(generate_error_message("missing or invalid server list"));
+					return response;
 				}catch(ClassCastException e){
-					return generate_error_message("missing or invalid server list");
+					response.add(generate_error_message("missing or invalid server list"));
+					return response;
 				}
 				
 				String[] serverList = getServerList(sl);
 				if(serverList.length==0){
-					return generate_error_message("missing server list");
+					response.add(generate_error_message("missing server list"));
+					return response;
 				}
 				
 				
-				message = exchange(serverList);
-				return message;
+				response = exchange(serverList);
+				return response;
 				
 			}
 			//deal with remove,publish,share commands, 
@@ -198,75 +210,89 @@ public class Service extends Thread{
 					rcs = (JSONObject)obj.get("resource");
 					//System.out.println(rcs.toJSONString());
 				}catch(NullPointerException e){
-					return generate_error_message("missing resource");
+					response.add( generate_error_message("missing resource"));
+					return response;
 				}catch(ClassCastException e){
-					return generate_error_message("missing resource");
+					response.add( generate_error_message("missing resource"));
+					return response;
 				}
 				//URI must be absolute,owner cannot be * and correct resource field
 				if(!getResource(rcs)||owner.equals("*")){
-					return generate_error_message("invalid resource");
+					response.add( generate_error_message("invalid resource"));
+					return response;
 				}
 				
 				switch (command){
 				case "REMOVE":
 					if(!HelperFunction.isURI(uri)){
-						return generate_error_message("invalid resource");
+						response.add( generate_error_message("invalid resource"));
+						return response;
 					}
 					
-					message = remove();
+					response = remove();
 					break;
 				case "PUBLISH":
 					if(!HelperFunction.isURI(uri) || HelperFunction.isFileName(uri)){
-						return generate_error_message("invalid resource");
+						response.add( generate_error_message("invalid resource"));
+						return response;
 					}
-					message = publish();
+					response = publish();
 					break;
 				case "SHARE":
 					if(!HelperFunction.isFileScheme(uri)){
-						return generate_error_message("invalid resource");
+						response.add( generate_error_message("invalid resource"));
+						return response;
 					}
 					// check if secret value is given
 					secret =(String)obj.get("secret");
 					if(secret.equals("")){
-						return generate_error_message("missing resource and/or secret");
+						response.add( generate_error_message("missing resource and/or secret"));
+						return response;
 					}		
 					// check if secret value is same as server secret
 					if(!secret.equals(server.getSecret())){
-						return generate_error_message("incorrect secret");
+						response.add( generate_error_message("incorrect secret"));
+						return response;
 					}
-					message = share();
+					response = share();
 					break;
 				default: break;
 				}
-				return message;
+				return response;
 			}
 			//dealing with fetch command
 			if(command.equals("FETCH")){
 				try{
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
 				}catch(NullPointerException e){
-					return generate_error_message("missing resourceTemplate");
+					response.add( generate_error_message("missing resourceTemplate"));
+					return response;
 				}catch(ClassCastException e){
-					return generate_error_message("missing resourceTemplate");
+					response.add( generate_error_message("missing resourceTemplate"));
+					return response;
 				}
 				
 				
 				if(!getResource(rcsTemplate)){
-					return generate_error_message("invalid resourceTemplate");
+					response.add( generate_error_message("invalid resourceTemplate"));
+					return response;
 				}
 				
 				if(channel.equals("")){
-					return generate_error_message("invalid channel");
+					response.add( generate_error_message("invalid channel"));
+					return response;
 				}
 				// check if it is a file
 				if(!HelperFunction.isFileScheme(uri)){
-					return generate_error_message("invalid File");
+					response.add( generate_error_message("invalid File"));
+					return response;
 				}
-				message = fetch();
-				return message;
+				response = fetch();
+				return response;
 				
 			}
-			return generate_error_message("invalid command");
+			response.add( generate_error_message("invalid command"));
+			return response;
 			
 		}
 		
@@ -277,9 +303,10 @@ public class Service extends Thread{
 		 * 2.need to be overrided:there already is one resource with the same primary key(channel, owner,uri),
 		 * 3.not allowed to be published:there is one resource having same channel and uri but different owner 
 		 */
-		private String publish(){
+		private ArrayList<String> publish(){
 			Resource publish_resource=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
+			ArrayList<String> response = new ArrayList<String>();
 			boolean hasPublished=false;
 			//get a synchronize lock
 			synchronized(server.getResource()){
@@ -288,7 +315,8 @@ public class Service extends Thread{
 						break;
 					}
 					if(!publish_notAllowed(server.getResource().get(i), uri,owner,channel)){
-						return generate_error_message( "cannot publish resource");
+						response.add( generate_error_message("cannot publish resource"));
+						return response;
 					}
 					if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
 						server.getResource().set(i, publish_resource);
@@ -307,7 +335,8 @@ public class Service extends Thread{
 				
 			}
 			//new resource is added into server resourceArray
-			return generate_success_message();
+			response.add(generate_success_message());
+			return response;
 		}
 		/*
 		 * same uri,channel and owner, need to override such resource
@@ -337,9 +366,10 @@ public class Service extends Thread{
 		 * Additional rules: secret, file scheme    
 		 */
 
-		private String share(){
+		private ArrayList<String> share(){
 			Resource share_resource=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
+			ArrayList<String> response = new ArrayList<String>();
 			boolean hasShared=false;
 			
 			shareFileName = HelperFunction.getFileName(uri);
@@ -352,7 +382,8 @@ public class Service extends Thread{
 					
 					// same resource with different owners is not allowed to share
 					if(!publish_notAllowed(server.getResource().get(i), uri,owner,channel)){
-						return generate_error_message( "cannot share resource"); 
+						response.add( generate_error_message("cannot share resource"));
+						return response;
 					}
 					if(samePrimaryKey(server.getResource().get(i),uri,owner,channel)){
 						server.getResource().set(i, share_resource); // overwrite
@@ -370,7 +401,8 @@ public class Service extends Thread{
 			}catch(InterruptedException e){
 				e.printStackTrace();
 			}
-			return generate_success_message();
+			response.add(generate_success_message());
+			return response;
 		}
 		/*
 		 * remove command has two possible choices
@@ -378,9 +410,10 @@ public class Service extends Thread{
 		 * 2.not such a resource in server resources, response error message
 		 * notes:get the index of targeted resource in "For", then remove it after the "For"
 		 */
-		private String remove(){
+		private ArrayList<String> remove(){
 			Resource publish_resource=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
+			ArrayList<String> response = new ArrayList<String>();
 			boolean resource_need_Removed=false;
 			int index_remove=0;
 			synchronized(server.getResource()){
@@ -392,7 +425,8 @@ public class Service extends Thread{
 					}
 				}
 				if(!resource_need_Removed){
-					return generate_error_message( "cannot remove resource");
+					response.add(generate_error_message( "cannot remove resource"));
+					return response;
 				}
 				server.getResource().remove(index_remove);
 			}
@@ -402,7 +436,8 @@ public class Service extends Thread{
 			}catch(InterruptedException e){
 				e.printStackTrace();
 			}
-			return generate_success_message();
+			response.add(generate_success_message());
+			return response;
 		}
 		/**
 		 * dealing with exchange command 
@@ -410,7 +445,8 @@ public class Service extends Thread{
 		 * @param 
 		 * @return response message for one exchange command 
 		 */
-		private String exchange(String[] serverlist){
+		private ArrayList<String> exchange(String[] serverlist){
+			ArrayList<String> response = new ArrayList<String>();
 			boolean duplicate = false;
 			boolean isThisServer = false;
 			String currentServer = server.getHostName()+":"+server.getPort();
@@ -446,7 +482,8 @@ public class Service extends Thread{
 					e.printStackTrace();
 					}				
 				}
-			return generate_success_message();
+			response.add(generate_success_message());
+			return response;
 		}
 		
 		/**
@@ -456,11 +493,11 @@ public class Service extends Thread{
 		 * @param 
 		 * @return response message for one fetch command 
 		 */
-		private String fetch(){
+		private ArrayList<String> fetch(){
 			
 			resultSize2 = 0;
-			JSONObject response = new JSONObject();
-			StringBuilder fetchMessage = new StringBuilder();
+			ArrayList<String> response = new ArrayList<String>();
+			
 			JSONObject resource;
 			//the resource template 
 			Resource template=new Resource(name, tagsString, description,
@@ -476,10 +513,9 @@ public class Service extends Thread{
 						
 						fileName = HelperFunction.getFileName(resources.get(i).getUri());
 						
-						response.put("response", "success");
-						fetchMessage.append(response.toJSONString()+"\n");
+						response.add(this.generate_success_message());
 						resource.put("resourceSize", HelperFunction.fileSize(uri));
-						fetchMessage.append(resource+"\n");
+						response.add(resource.toJSONString());
 						resultSize2 ++;
 						}
 					}
@@ -493,9 +529,9 @@ public class Service extends Thread{
 			JSONObject result = new JSONObject();
 			//add the information of file's size 
 			result.put("resultSize", resultSize2);
-			fetchMessage.append(result.toJSONString());
+			response.add(result.toJSONString());
 			
-			return fetchMessage.toString();
+			return response;
 			
 			
 		}
@@ -506,17 +542,13 @@ public class Service extends Thread{
 		 *  if true, need to query the server in server records, otherwise not need
 		 * @return response message for one query command 
 		 */
-		private String query(boolean relay){
+		private ArrayList<String> query(boolean relay){
 			//result size of query
 			int resultSize = 0;
+			ArrayList<String> response = new ArrayList<String>();
 			
-			//build query message
-			StringBuilder querymessage = new StringBuilder();
+			response.add(this.generate_success_message());
 			
-			//create response
-			JSONObject response = new JSONObject();
-			response.put("response", "success");
-			querymessage.append(response.toJSONString()+"\n");
 			JSONObject resource;
 			
 			//create template from the client arguments
@@ -530,8 +562,7 @@ public class Service extends Thread{
 						resource = resources.get(i).getResourceWithServer
 								(server.getHostName(),server.getPort()).getStarOwner().getJSON();
 						
-						querymessage.append(resource+"\n");
-						//add result size
+						response.add(resource.toJSONString());
 						resultSize ++;
 						
 					}
@@ -573,12 +604,10 @@ public class Service extends Thread{
 						try{
 							//set relay argument to false
 							EzClient c = new EzClient(b.toString().split(" "),false,true);
-							String serverResponse =c.run();
+							ArrayList<String> serverResponse =c.run();
 							
-							//get the response and add it to querymessage
-							String[] serverRes= serverResponse.split("\n");
-							for(int k = 1 ; k<serverRes.length-1;k++){
-								querymessage.append(serverRes[k]+"\n");
+							for(int k = 1 ; k<serverResponse.size()-1;k++){
+								response.add(serverResponse.get(k));
 								resultSize++;
 							}
 						}catch(IOException e){
@@ -599,9 +628,9 @@ public class Service extends Thread{
 			//add resultsize to the query message
 			JSONObject result = new JSONObject();
 			result.put("resultSize", resultSize);
-			querymessage.append(result.toJSONString());
+			response.add(result.toJSONString());
 			
-			return querymessage.toString();
+			return response;
 		}
 
 		/**

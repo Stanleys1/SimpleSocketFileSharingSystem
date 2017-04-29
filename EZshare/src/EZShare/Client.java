@@ -2,6 +2,7 @@ package EZShare;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Client {
 	
@@ -19,7 +20,10 @@ public class Client {
 		
 		try{
 			EzClient client = new EzClient(args,true,false);
-			String response =client.run();
+			ArrayList<String>response =client.run();
+			for(int i = 0 ;i <response.size();i++){
+				System.out.println(response.get(i));
+			}
 
 		}catch(NullPointerException e){
 			System.out.println("null pointer in client found");

@@ -35,8 +35,9 @@ public class EzClient {
 	
 	private String uri2;
 	private String fileName2;
+	private String command;
 	
-	private CommandLine cmd;
+	
 	private HelpFormatter formatter;
 	
 	//default timeout time (5s)
@@ -97,7 +98,8 @@ public class EzClient {
     private JSONObject generate_message(String[] args){
 		JSONObject message = new JSONObject();
 		JSONArray exchange_servers= new JSONArray();
-		//CommandLine cmd; 
+		
+		CommandLine cmd; 
 		CommandLineParser parser = new DefaultParser();
 		try{
 			cmd = parser.parse(options, args);
@@ -143,6 +145,7 @@ public class EzClient {
 				exchange_servers=exchange_getServerList(serversArray);
 				message.put("serverList", exchange_servers);
 				message.put("command", "EXCHANGE");
+				command = "exchange";
 				return message;
 			}
 			// publish command
@@ -154,6 +157,7 @@ public class EzClient {
 					message.put("resource",r.getJSON());
 					message.put("command","PUBLISH");
 				}
+				command = "publish";
 				return message;
 			}
 			//remove command
@@ -164,6 +168,7 @@ public class EzClient {
 				}else{
 					message.put("resource",r.getJSON());
 					message.put("command","REMOVE");
+					command = "remove";
 					return message;
 				}
 			}
@@ -183,6 +188,7 @@ public class EzClient {
 				message.put("resource",r.getJSON());
 				message.put("command","SHARE");
 				message.put("secret", share_secret);
+				command ="share";
 				return message;
 			}
 			//query command
@@ -190,6 +196,7 @@ public class EzClient {
 				message.put("resourceTemplate",r.getJSON());
 				message.put("command","QUERY");
 				message.put("relay",query_relay);
+				command = "query";
 				return message;
 			}
 			//fetch command
@@ -205,6 +212,7 @@ public class EzClient {
 					message.put("command","FETCH");
 					uri2 = r.getUri();
 					fileName2 = HelperFunction.getFileName(r.getUri());
+					command = "fetch";
 					return message;
 				}
 			}
@@ -240,10 +248,11 @@ public class EzClient {
    	 * @return the message received from the server 
      * @throws org.json.simple.parser.ParseException 
    	 */
-	public String run() throws IOException, NullPointerException {
+	public ArrayList<String> run() throws IOException, NullPointerException {
 		String message = generate_message(args).toJSONString();
 		Socket s = null;
-	    String data="";
+	    ArrayList<String> datas = new ArrayList<String>();
+	    String data ="";
 		
 		try{
 		    s = new Socket(hostname,port);  
@@ -263,55 +272,77 @@ public class EzClient {
 		    out.writeUTF(message); // UTF is a string encoding see Sn. 4.4
 		    
 		    out.flush();
+		    JSONParser parser = new JSONParser();
+		    boolean finished = false;
+		    
+		    if(command.equals("fetch")||command.equals("query")){
+		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
+		    	if(response.get("response").equals("success")){
+		    		datas.add(response.toJSONString());
+		    		while(!finished){
+		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
+		    			if(next.containsKey("resultSize")){
+		    				datas.add(next.toJSONString());
+		    				finished = true;
+		    			}else{
+		    				datas.add(next.toJSONString());
+		    			}
+		    		}
+		    		
+		    		// downloading file for fetch command
+		    		if(command.equals("fetch")) { 
+				    	//System.out.println("HHHHHH:" + data.substring(data.length()-2, data.length()));
+				    	if (!data.substring(data.length()-2, data.length()-1).equals("0")){ 
+				    	
+				    	URI u = new URI(uri2);	
+						File f = new File(u);
+						if(f.exists()) {
+						// The file location
+						String fileName = fileName2;
+							
+						// Create a RandomAccessFile to read and write the output file.
+						RandomAccessFile downloadingFile = new RandomAccessFile(fileName, "rw");
+						
+						long fileSizeRemaining = (Long) f.length();
+						
+						int chunkSize = setChunkSize(fileSizeRemaining);
+						
+						// Represents the receiving buffer
+						byte[] receiveBuffer = new byte[chunkSize];
+						
+						// Variable used to read if there are remaining size left to read.
+						int num;
+						
+						System.out.println("Downloading "+fileName+" of size "+fileSizeRemaining);
+						while((num=in.read(receiveBuffer))>0){
+							// Write the received bytes into the RandomAccessFile
+							downloadingFile.write(Arrays.copyOf(receiveBuffer, num));
+							
+							// Reduce the file size left to read..
+							fileSizeRemaining-=num;
+							
+							// Set the chunkSize again
+							chunkSize = setChunkSize(fileSizeRemaining);
+							receiveBuffer = new byte[chunkSize];
+							
+							// If you're done then break
+							if(fileSizeRemaining==0){
+								break;
+							}
+						}
+						System.out.println("File received!");
+						downloadingFile.close();
+						}
+				    } 
+				  }
+		    	}else{
+		    		datas.add(response.toJSONString());
+		    	}
+		    }else{
+		    	datas.add(in.readUTF());
+		    }
 		    
 		    
-		    data = in.readUTF();// read a line of data from the stream
-		    
-		    // downloading file for fetch command
-		    if(cmd.hasOption("fetch")) { 
-		    	//System.out.println("HHHHHH:" + data.substring(data.length()-2, data.length()));
-		    	if (!data.substring(data.length()-2, data.length()-1).equals("0")){ 
-		    	
-		    	URI u = new URI(uri2);	
-				File f = new File(u);
-				if(f.exists()) {
-				// The file location
-				String fileName = fileName2;
-					
-				// Create a RandomAccessFile to read and write the output file.
-				RandomAccessFile downloadingFile = new RandomAccessFile(fileName, "rw");
-				
-				long fileSizeRemaining = (Long) f.length();
-				
-				int chunkSize = setChunkSize(fileSizeRemaining);
-				
-				// Represents the receiving buffer
-				byte[] receiveBuffer = new byte[chunkSize];
-				
-				// Variable used to read if there are remaining size left to read.
-				int num;
-				
-				System.out.println("Downloading "+fileName+" of size "+fileSizeRemaining);
-				while((num=in.read(receiveBuffer))>0){
-					// Write the received bytes into the RandomAccessFile
-					downloadingFile.write(Arrays.copyOf(receiveBuffer, num));
-					
-					// Reduce the file size left to read..
-					fileSizeRemaining-=num;
-					
-					// Set the chunkSize again
-					chunkSize = setChunkSize(fileSizeRemaining);
-					receiveBuffer = new byte[chunkSize];
-					
-					// If you're done then break
-					if(fileSizeRemaining==0){
-						break;
-					}
-				}
-				System.out.println("File received!");
-				downloadingFile.close();
-				}
-		    } }
 		    s.close();
 		}catch(UnknownHostException e){
 			System.out.println("can't identify host name");
@@ -319,11 +350,13 @@ public class EzClient {
 			System.exit(0);
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
+		} catch (org.json.simple.parser.ParseException e) {
+			// TODO Auto-generated catch block
+			System.out.println("message parse failed");
 		}
 		
-		System.out.println("RECEIVED:"+data);
 		
-		return data;
+		return datas;
 	}
 	/*
 	 * input:two servers including hostname and port after original server value in args split by ","
