@@ -264,6 +264,7 @@ public class EzClient {
 		    
 		    out.flush();
 		    
+		    
 		    data = in.readUTF();// read a line of data from the stream
 		    
 		    // downloading file for fetch command
