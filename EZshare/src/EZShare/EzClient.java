@@ -252,7 +252,6 @@ public class EzClient {
 		String message = generate_message(args).toJSONString();
 		Socket s = null;
 	    ArrayList<String> datas = new ArrayList<String>();
-	    String data ="";
 		
 		try{
 		    s = new Socket(hostname,port);  
@@ -274,6 +273,7 @@ public class EzClient {
 		    out.flush();
 		    JSONParser parser = new JSONParser();
 		    boolean finished = false;
+		    boolean result_0 = false;
 		    
 		    if(command.equals("fetch")||command.equals("query")){
 		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
@@ -282,6 +282,9 @@ public class EzClient {
 		    		while(!finished){
 		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
 		    			if(next.containsKey("resultSize")){
+		    				if(next.get("resultSize").equals("0")){
+		    					result_0 = true;
+		    				}
 		    				datas.add(next.toJSONString());
 		    				finished = true;
 		    			}else{
@@ -292,7 +295,7 @@ public class EzClient {
 		    		// downloading file for fetch command
 		    		if(command.equals("fetch")) { 
 				    	//System.out.println("HHHHHH:" + data.substring(data.length()-2, data.length()));
-				    	if (!data.substring(data.length()-2, data.length()-1).equals("0")){ 
+				    	if (!result_0){ 
 				    	
 				    	URI u = new URI(uri2);	
 						File f = new File(u);
