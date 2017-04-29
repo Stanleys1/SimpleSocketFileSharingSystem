@@ -21,9 +21,10 @@ public class Client {
 		try{
 			EzClient client = new EzClient(args,true,false);
 			ArrayList<String>response =client.run();
-			for(int i = 0 ;i <response.size();i++){
-				System.out.println(response.get(i));
-			}
+			//pring debug information in EzClient
+			//for(int i = 0 ;i <response.size();i++){
+			//	System.out.println(response.get(i));
+			//}
 
 		}catch(NullPointerException e){
 			System.out.println("null pointer in client found");

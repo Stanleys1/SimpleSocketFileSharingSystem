@@ -282,7 +282,7 @@ public class EzClient {
 		    		while(!finished){
 		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
 		    			if(next.containsKey("resultSize")){
-		    				if(((String)next.get("resultSize")).equals("0")){
+		    				if((Long)next.get("resultSize")==0){
 		    					result_0 = true;
 		    				}
 		    				datas.add(next.toJSONString());
@@ -357,8 +357,13 @@ public class EzClient {
 			// TODO Auto-generated catch block
 			System.out.println("message parse failed");
 		}
-		
-		
+		//print debug information
+		if(debug){
+			System.out.print("RECEIVED:");
+			for(int i = 0 ;i <datas.size();i++){
+				System.out.println(datas.get(i));
+			}
+		}
 		return datas;
 	}
 	/*
