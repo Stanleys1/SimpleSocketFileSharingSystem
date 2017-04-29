@@ -209,8 +209,7 @@ public class EzClient {
 				}
 			}
 		}catch(ParseException exception){
-			System.out.println("Parse error:");
-			exception.printStackTrace();
+			System.out.println("Parse failed");
 		}
 		System.out.println("no valid option found");
 		System.exit(0);
