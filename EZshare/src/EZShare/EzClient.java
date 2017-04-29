@@ -42,6 +42,9 @@ public class EzClient {
 	//default timeout time (5s)
 	public static final int TIMEOUT = 5000;
 	
+	public static final String DEFAULTHOST = "localhost";
+	
+	
 	public EzClient(String[] args,boolean query, boolean timeout)throws NullPointerException, IOException{
 		this.args = args; 
 		this.query_relay = query;
@@ -110,8 +113,7 @@ public class EzClient {
 			if(cmd.hasOption("host")){
 				this.hostname = cmd.getOptionValue("host");
 			}else{
-				System.out.println("no host provided");
-				System.exit(0);
+				this.hostname = DEFAULTHOST;
 			}
 			//if there is not server port provided by arguments, print and then end this client
 			if(cmd.hasOption("port")){
@@ -123,8 +125,7 @@ public class EzClient {
 					System.exit(0);
 				}
 			}else{
-				System.out.println("no port provided");
-				System.exit(0);
+				this.port = EzServer.DEFAULTPORT;
 			}
 			//exchange command
 			if(cmd.hasOption("exchange")){
