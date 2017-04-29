@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.json.simple.*;
+import org.json.simple.parser.JSONParser;
 
 
 //ARGUMENTS:
@@ -34,6 +35,7 @@ public class EzClient {
 	
 	private String uri2;
 	private String fileName2;
+	
 	private CommandLine cmd;
 	private HelpFormatter formatter;
 	
@@ -235,6 +237,7 @@ public class EzClient {
    	 * client run method  
    	 * @param 
    	 * @return the message received from the server 
+     * @throws org.json.simple.parser.ParseException 
    	 */
 	public String run() throws IOException, NullPointerException {
 		String message = generate_message(args).toJSONString();
@@ -263,7 +266,10 @@ public class EzClient {
 		    data = in.readUTF();// read a line of data from the stream
 		    
 		    // downloading file for fetch command
-		    if(cmd.hasOption("fetch")) {
+		    if(cmd.hasOption("fetch")) { 
+		    	//System.out.println("HHHHHH:" + data.substring(data.length()-2, data.length()));
+		    	if (!data.substring(data.length()-2, data.length()-1).equals("0")){ 
+		    	
 		    	URI u = new URI(uri2);	
 				File f = new File(u);
 				if(f.exists()) {
@@ -303,7 +309,7 @@ public class EzClient {
 				System.out.println("File received!");
 				downloadingFile.close();
 				}
-		    }
+		    } }
 		    s.close();
 		}catch(UnknownHostException e){
 			System.out.println("can't identify host name");
