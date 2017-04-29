@@ -38,9 +38,7 @@ public class Service extends Thread{
 	
 	
 	private int resultSize2;
-	private long fileSize;
 	private String fileName;
-	private String uri2;
 	private String shareFileName;
 	
 	public Service(){
@@ -411,8 +409,6 @@ public class Service extends Thread{
 		 * notes:get the index of targeted resource in "For", then remove it after the "For"
 		 */
 		private ArrayList<String> remove(){
-			Resource publish_resource=new Resource(name, tagsString, description,
-					 uri,  channel, owner, ezserver);
 			ArrayList<String> response = new ArrayList<String>();
 			boolean resource_need_Removed=false;
 			int index_remove=0;

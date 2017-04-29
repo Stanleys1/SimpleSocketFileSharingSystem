@@ -273,7 +273,7 @@ public class EzClient {
 		    out.flush();
 		    JSONParser parser = new JSONParser();
 		    boolean finished = false;
-		    boolean result_0 = false;
+		    boolean result_0 = true;
 		    
 		    if(command.equals("fetch")||command.equals("query")){
 		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
@@ -282,8 +282,8 @@ public class EzClient {
 		    		while(!finished){
 		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
 		    			if(next.containsKey("resultSize")){
-		    				if((Long)next.get("resultSize")==0){
-		    					result_0 = true;
+		    				if((Long)next.get("resultSize")==1){
+		    					result_0 = false;
 		    				}
 		    				datas.add(next.toJSONString());
 		    				finished = true;
