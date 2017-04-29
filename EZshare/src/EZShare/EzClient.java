@@ -176,11 +176,10 @@ public class EzClient {
 				String share_secret="";
 				if(cmd.hasOption("secret")){
 					share_secret =cmd.getOptionValue("secret");
-					}
-				if(share_secret==" "){
-					System.out.println("secret must be present");
+				}else{
+					System.out.println("secret must be present for share");
 					System.exit(0);
-					}
+				}
 				message.put("resource",r.getJSON());
 				message.put("command","SHARE");
 				message.put("secret", share_secret);
