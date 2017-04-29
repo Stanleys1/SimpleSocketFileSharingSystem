@@ -213,6 +213,8 @@ public class EzClient {
 			System.out.println("Parse error:");
 			exception.printStackTrace();
 		}
+		System.out.println("no valid option found");
+		System.exit(0);
 		return message;
 	}
     /**
