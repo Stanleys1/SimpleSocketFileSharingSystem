@@ -282,7 +282,7 @@ public class EzClient {
 		    		while(!finished){
 		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
 		    			if(next.containsKey("resultSize")){
-		    				if(next.get("resultSize").equals("0")){
+		    				if(((String)next.get("resultSize")).equals("0")){
 		    					result_0 = true;
 		    				}
 		    				datas.add(next.toJSONString());
@@ -297,45 +297,45 @@ public class EzClient {
 				    	//System.out.println("HHHHHH:" + data.substring(data.length()-2, data.length()));
 				    	if (!result_0){ 
 				    	
-				    	URI u = new URI(uri2);	
-						File f = new File(u);
-						if(f.exists()) {
-						// The file location
-						String fileName = fileName2;
+				    		URI u = new URI(uri2);	
+				    		File f = new File(u);
+				    		if(f.exists()) {
+				    			// The file location
+				    				String fileName = fileName2;
 							
-						// Create a RandomAccessFile to read and write the output file.
-						RandomAccessFile downloadingFile = new RandomAccessFile(fileName, "rw");
+				    				// Create a RandomAccessFile to read and write the output file.
+				    				RandomAccessFile downloadingFile = new RandomAccessFile(fileName, "rw");
 						
-						long fileSizeRemaining = (Long) f.length();
+				    				long fileSizeRemaining = (Long) f.length();
 						
-						int chunkSize = setChunkSize(fileSizeRemaining);
+				    				int chunkSize = setChunkSize(fileSizeRemaining);
 						
-						// Represents the receiving buffer
-						byte[] receiveBuffer = new byte[chunkSize];
+				    				// Represents the receiving buffer
+				    				byte[] receiveBuffer = new byte[chunkSize];
 						
-						// Variable used to read if there are remaining size left to read.
-						int num;
+				    				// Variable used to read if there are remaining size left to read.
+				    				int num;
 						
-						System.out.println("Downloading "+fileName+" of size "+fileSizeRemaining);
-						while((num=in.read(receiveBuffer))>0){
-							// Write the received bytes into the RandomAccessFile
-							downloadingFile.write(Arrays.copyOf(receiveBuffer, num));
+				    				System.out.println("Downloading "+fileName+" of size "+fileSizeRemaining);
+				    				while((num=in.read(receiveBuffer))>0){
+				    					// Write the received bytes into the RandomAccessFile
+				    					downloadingFile.write(Arrays.copyOf(receiveBuffer, num));
 							
-							// Reduce the file size left to read..
-							fileSizeRemaining-=num;
+				    					// Reduce the file size left to read..
+				    					fileSizeRemaining-=num;
 							
-							// Set the chunkSize again
-							chunkSize = setChunkSize(fileSizeRemaining);
-							receiveBuffer = new byte[chunkSize];
+				    					// Set the chunkSize again
+				    					chunkSize = setChunkSize(fileSizeRemaining);
+				    					receiveBuffer = new byte[chunkSize];
 							
-							// If you're done then break
-							if(fileSizeRemaining==0){
-								break;
-							}
-						}
-						System.out.println("File received!");
-						downloadingFile.close();
-						}
+				    					// If you're done then break
+				    					if(fileSizeRemaining==0){
+				    						break;
+				    					}
+				    				}
+				    				System.out.println("File received!");
+				    				downloadingFile.close();
+				    		}
 				    } 
 				  }
 		    	}else{
