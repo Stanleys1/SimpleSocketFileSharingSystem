@@ -82,6 +82,8 @@ public class EzClient {
 				desc("tags on the resources (multiple)").build());
 		op.add(new Option("uri",true,"uri of the resource"));
 		op.add(new Option("help",false,"get help on all options"));
+		op.add(new Option("subscribe",false,"subscribe to server"));
+		op.add(new Option("id", true, "id for the subscription"));
 		
 		
 		Options options = new Options();
@@ -198,6 +200,19 @@ public class EzClient {
 				message.put("relay",query_relay);
 				command = "query";
 				return message;
+			}
+			
+			if(cmd.hasOption("subscribe")){
+				message.put("command", "SUBSCRIBE");
+				message.put("resourceTemplate", r.getJSON());
+				message.put("relay", query_relay);
+				if(cmd.hasOption("id")){
+					message.put("id", cmd.getOptionObject("id"));
+				}else{
+					System.out.println("please provide id with subscribe");
+					System.exit(0);
+				}
+				command = "subscribe";
 			}
 			//fetch command
 			if(cmd.hasOption("fetch")){
