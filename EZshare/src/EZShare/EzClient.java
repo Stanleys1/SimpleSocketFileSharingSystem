@@ -84,6 +84,7 @@ public class EzClient {
 		op.add(new Option("uri",true,"uri of the resource"));
 		op.add(new Option("help",false,"get help on all options"));
 		op.add(new Option("subscribe",false,"subscribe to server"));
+		op.add(new Option("unsubscribe",false,"unsubscribe an id to server"));
 		op.add(new Option("id", true, "id for the subscription"));
 		
 		//TODO
@@ -214,7 +215,7 @@ public class EzClient {
 				message.put("resourceTemplate", r.getJSON());
 				message.put("relay", query_relay);
 				if(cmd.hasOption("id")){
-					message.put("id", cmd.getOptionObject("id"));
+					message.put("id", cmd.getOptionValue("id"));
 				}else{
 					System.out.println("please provide id with subscribe");
 					System.exit(0);
@@ -222,6 +223,19 @@ public class EzClient {
 				command = "subscribe";
 				return message;
 			}
+			
+			if(cmd.hasOption("unsubscribe")){
+				message.put("command", "UNSUBSCRIBE");
+				if(cmd.hasOption("id")){
+					message.put("id", cmd.getOptionValue("id"));
+				}else{
+					System.out.println("please provide id with unsubscribe");
+					System.exit(0);
+				}
+				command = "unsubscribe";
+				return message;
+			}
+			
 			
 			//terminate
 			if(cmd.hasOption("terminate")){
