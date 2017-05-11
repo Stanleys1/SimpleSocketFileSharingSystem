@@ -17,7 +17,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -43,7 +42,7 @@ public class Service extends Thread{
 	private String fileName;
 	private String shareFileName;
 	
-	private HashMap<String, Thread> subscribeIDs;
+	private HashMap<String, ServerSubscribeResponse> subscribeIDs;
 	private int resultSize = 0;
 	
 	public Service(){
@@ -68,20 +67,27 @@ public class Service extends Thread{
 		try{
 			in = new DataInputStream(clientSocket.getInputStream());
 			out = new DataOutputStream(clientSocket.getOutputStream());
+			
+			//as long it is not finished
+			//keep reading and sending (for asynchronous connection)
 			while(!finished){
 				String input = in.readUTF();
 				if(debug){
 					System.out.println("RECEIVED:"+ input);
 				}
 				ArrayList<String> output = JSONOperator(input);
-				for(int i = 0 ; i<output.size();i++){
-					if(debug){
-						System.out.println("SENT:"+ output.get(i));
+				
+				if(output.size()>0){
+					for(int i = 0 ; i<output.size();i++){
+						if(debug){
+							System.out.println("SENT:"+ output.get(i));
+						}
+						out.writeUTF(output.get(i));
 					}
-					out.writeUTF(output.get(i));
 				}
 			}
 			
+			//if command is fetch, send the file
 			if(command.equals("FETCH")) {
 				System.out.println("________"+ fileName);	
 				if(resultSize != 0) {
@@ -193,7 +199,7 @@ public class Service extends Thread{
 			
 			
 			
-			
+			//deal with subscribe
 			if(command.equals("SUBSCRIBE")){
 				boolean relay = false;
 				String id = "";
@@ -216,12 +222,14 @@ public class Service extends Thread{
 				return response;
 			}
 			
+			//deal with terminate
 			if(command.equals("TERMINATE")){
 				finished = true;
 				response = terminate();
 				return response;
 			}
 			
+			//deal with unsubscribe
 			if(command.equals("UNSUBSCRIBE")){
 				String id= "";
 				try{
@@ -716,19 +724,21 @@ public class Service extends Thread{
 			ArrayList<String> response = new ArrayList<String>();
 			JSONObject initialResponse = new JSONObject();
 			
-			
+			//create list of threads to handle the subscription
 			if(this.subscribeIDs == null){
-				this.subscribeIDs = new HashMap<String,Thread>();
+				this.subscribeIDs = new HashMap<String,ServerSubscribeResponse>();
 			}else{
+				//reject if id already present
 				if(this.subscribeIDs.containsKey(id)){
 					response.add(this.generate_error_message("existing id"));
 					return response;
 				}
 			}
-			
+			//create initial response for the subscribe
 			initialResponse.put("response","success");
 			initialResponse.put("id", id);
 			
+			//send that initial response to the client to start subscription
 			try {
 				out.writeUTF(initialResponse.toJSONString());
 			} catch (IOException e) {
@@ -740,20 +750,31 @@ public class Service extends Thread{
 					 uri,  channel, owner, ezserver);
 			
 			
-			
+			//create response thread for the subscription for the template
 			ServerSubscribeResponse s = new ServerSubscribeResponse(this.server,this.out,template);
 			s.start();
+			
+			//put the thread into the hashmap with the id
 			this.subscribeIDs.put(id, s );
 			
-			response.add(initialResponse.toJSONString());
 			return response;
 		}
 		
+		
+		//function for unsubscribe
 		private ArrayList<String> unsubscribe(String id){
+			
 			ArrayList<String> response = new ArrayList<String>();
+			
+			//if there is no subscription with that id return error message
 			if(!this.subscribeIDs.containsKey(id)){
 				response.add(this.generate_error_message("no matching id found"));
 				return response;
+			}else{
+				//else stop thread subscription
+				this.subscribeIDs.get(id).stopThread();
+				//remove from hashmap
+				this.subscribeIDs.remove(id);
 			}
 			
 			response.add(this.generate_success_message());
@@ -761,14 +782,20 @@ public class Service extends Thread{
 		}
 		
 		
+		//terminate function
 		private ArrayList<String> terminate(){
+			
 			ArrayList<String> response = new ArrayList<String>();
 			
+			//iterate the hashmap
 			Iterator iter = this.subscribeIDs.entrySet().iterator();
 			while(iter.hasNext()){
 				Map.Entry pair = (Map.Entry)iter.next();
+				//get the thread
 		        ServerSubscribeResponse res = (ServerSubscribeResponse) pair.getValue();
+		        //add the resultSize for each thread
 		        this.resultSize+= res.getResultSize();
+		        //stop each thread
 		        res.stopThread();
 			}
 			

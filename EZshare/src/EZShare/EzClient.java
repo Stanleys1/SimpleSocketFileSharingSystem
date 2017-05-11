@@ -96,6 +96,8 @@ public class EzClient {
 		}
 		return options;
 	}
+	
+	
 	/**
 	 * construct the message sent to the server in form of JsonObject  
 	 * @param arguments
@@ -288,8 +290,10 @@ public class EzClient {
 		    	s.setSoTimeout(TIMEOUT);
 		    }
 		    System.out.println("Connection Established");
+		    //create input streams
 		    DataInputStream in = new DataInputStream( s.getInputStream());
 		    DataOutputStream out =new DataOutputStream( s.getOutputStream());
+		    
 		    
 		    if(debug){
 		    	 System.out.println("SENT:"+message); 
@@ -308,6 +312,8 @@ public class EzClient {
 		    
 		    boolean result_0 = true;
 		    
+		    //if command == fetch or query
+		    //wait for multiple readings until resultSize is obtained
 		    if(command.equals("fetch")||command.equals("query")){
 		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
 		    	if(response.get("response").equals("success")){
@@ -371,21 +377,28 @@ public class EzClient {
 		    				}
 		    			} 
 		    		}
+		    	//if response failed, just get the message
 		    	}else{
 		    		datas.add(response.toJSONString());
 		    	}
-		    	
+		    
+		    	//if subscribe
 		    }else if(command.equals("subscribe")){
 		    		
-		    	
+		    	//read response
 		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
+		    	//if response succeeds
 		    	if(response.get("response").equals("success")){
 		    		System.out.println(response.toJSONString());
+		    		
+		    		//create a listener for further command from client
 		    		if(this.listener == null){
 			    		listener = new EzClientSubscribeListener(this,out,debug);
 			    		listener.start();
 			    	}
 		    		
+		    		//while it is not finished (no resultSize is given
+		    		//read all entries
 		    		while(!finished){
 		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
 		    			if(next.containsKey("resultSize")){
@@ -397,7 +410,8 @@ public class EzClient {
 		    		}
 		    	}
 		    }
-		    	
+		    
+		    	//if its not the commands mentioned above, just read the datas
 		   }else{
 		    	datas.add(in.readUTF());
 		    }

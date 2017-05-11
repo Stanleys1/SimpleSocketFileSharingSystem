@@ -6,6 +6,10 @@ import java.util.ArrayList;
 
 import org.json.simple.JSONObject;
 
+/**
+ * the subscription thread
+ *
+ */
 public class ServerSubscribeResponse  extends Thread{
 	private EzServer server;
 	private DataOutputStream out;
@@ -20,6 +24,7 @@ public class ServerSubscribeResponse  extends Thread{
 	}
 	
 	public void run(){
+		//get current matching queries from the template
 		ArrayList<Resource> r = server.getResource();
 		for(int i = 0 ; i< r.size() ;i++){
 			if(r.get(i).match_template(template)){
@@ -32,30 +37,38 @@ public class ServerSubscribeResponse  extends Thread{
 			}
 		}
 		
+		//while not finished
 		while(!finished){
 			try {
+				
+				//TODO MUST CHANGE ALL THIS
 				JSONObject c = new JSONObject();
 				c.put("message", "sending stuff every 5 s");
 				out.writeUTF(c.toJSONString());
 				System.out.println(c.toJSONString());
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
 	
+	/**
+	 * get the resultSize from this subscription
+	 * @return resultSize
+	 */
 	public int getResultSize(){
 		return this.resultSize;
 	}
-
+	
+	
+	/**
+	 * stop the thread
+	 */
 	public void stopThread() {
 		finished = true;
-		// TODO Auto-generated method stub
 		
 	}
 }
