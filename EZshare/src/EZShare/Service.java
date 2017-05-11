@@ -78,7 +78,7 @@ public class Service extends Thread{
 					if(debug){
 						System.out.println("SENT:"+ output.get(i));
 					}
-				out.writeUTF(output.get(i));
+					out.writeUTF(output.get(i));
 				}
 			}
 			
@@ -773,6 +773,11 @@ public class Service extends Thread{
 			}
 			
 			response.add(this.generate_success_message());
+			//add resultsize to the query message
+			JSONObject result = new JSONObject();
+			result.put("resultSize", resultSize);
+			response.add(result.toJSONString());
+			
 			return response;
 		}
 

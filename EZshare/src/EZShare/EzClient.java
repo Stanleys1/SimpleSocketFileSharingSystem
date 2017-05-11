@@ -86,6 +86,9 @@ public class EzClient {
 		op.add(new Option("subscribe",false,"subscribe to server"));
 		op.add(new Option("id", true, "id for the subscription"));
 		
+		//TODO
+		//need to be deleted
+		op.add(new Option("terminate",false,"terminate subs"));
 		
 		Options options = new Options();
 		for(int i = 0 ; i < op.size();i++){
@@ -203,6 +206,7 @@ public class EzClient {
 				return message;
 			}
 			
+			
 			if(cmd.hasOption("subscribe")){
 				message.put("command", "SUBSCRIBE");
 				message.put("resourceTemplate", r.getJSON());
@@ -214,6 +218,13 @@ public class EzClient {
 					System.exit(0);
 				}
 				command = "subscribe";
+				return message;
+			}
+			
+			//terminate
+			if(cmd.hasOption("terminate")){
+				message.put("command", "TERMINATE");
+				command = "terminate";
 				return message;
 			}
 			//fetch command
