@@ -37,6 +37,7 @@ public class ServerSubscribeResponse  extends Thread{
 				JSONObject c = new JSONObject();
 				c.put("message", "sending stuff every 5 s");
 				out.writeUTF(c.toJSONString());
+				System.out.println(c.toJSONString());
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block

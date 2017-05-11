@@ -390,8 +390,8 @@ public class EzClient {
 		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
 		    			if(next.containsKey("resultSize")){
 		    				System.out.println(next.toJSONString());
+		    				System.out.println("here");
 		    				finished = true;
-		    				listener.stopThread();
 		    			}else{
 		    				System.out.println(next.toJSONString());
 		    		}

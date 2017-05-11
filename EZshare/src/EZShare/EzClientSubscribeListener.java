@@ -29,18 +29,20 @@ public class EzClientSubscribeListener extends Thread {
 				String line = scn.nextLine();
 				String[] args = line.split(" ");
 				JSONObject message = client.generate_message(args);
+				
 				try {
 					out.writeUTF(message.toJSONString());
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				if(message.containsKey("command")){
+					if(message.get("command").equals("TERMINATE")){
+						break;
+					}
+				}
 			}
 			
 		}
-	}
-	
-	public void stopThread(){
-		finished = true;
 	}
 }
