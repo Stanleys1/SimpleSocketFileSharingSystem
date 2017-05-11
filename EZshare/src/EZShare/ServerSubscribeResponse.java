@@ -4,6 +4,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.json.simple.JSONObject;
+
 public class ServerSubscribeResponse  extends Thread{
 	private EzServer server;
 	private DataOutputStream out;
@@ -32,7 +34,9 @@ public class ServerSubscribeResponse  extends Thread{
 		
 		while(!finished){
 			try {
-				out.writeUTF("sending stuff every 5 s");
+				JSONObject c = new JSONObject();
+				c.put("message", "sending stuff every 5 s");
+				out.writeUTF(c.toJSONString());
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block

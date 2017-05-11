@@ -78,7 +78,7 @@ public class Service extends Thread{
 					if(debug){
 						System.out.println("SENT:"+ output.get(i));
 					}
-					out.writeUTF(output.get(i));
+				out.writeUTF(output.get(i));
 				}
 			}
 			
@@ -726,15 +726,26 @@ public class Service extends Thread{
 				}
 			}
 			
+			initialResponse.put("response","success");
+			initialResponse.put("id", id);
+			
+			try {
+				out.writeUTF(initialResponse.toJSONString());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
 			//create template from the client arguments
 			Resource template=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
 			
-			initialResponse.put("response","success");
-			initialResponse.put("id", id);
 			
-			this.subscribeIDs.put(id, new ServerSubscribeResponse(this.server,this.out,template));
 			
+			ServerSubscribeResponse s = new ServerSubscribeResponse(this.server,this.out,template);
+			s.start();
+			this.subscribeIDs.put(id, s );
+			
+			response.add(initialResponse.toJSONString());
 			return response;
 		}
 		
