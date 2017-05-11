@@ -13,6 +13,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
@@ -229,10 +231,6 @@ public class Service extends Thread{
 					return response ;
 				}catch(ClassCastException e){
 					response.add(generate_error_message("missing resourceTemplate"));
-					return response ;
-				}
-				if(!getResource(rcsTemplate)){
-					response.add(generate_error_message("invalid resourceTemplate"));
 					return response ;
 				}
 				response = unsubscribe(id);
@@ -728,12 +726,42 @@ public class Service extends Thread{
 				}
 			}
 			
+			//create template from the client arguments
+			Resource template=new Resource(name, tagsString, description,
+					 uri,  channel, owner, ezserver);
+			
 			initialResponse.put("response","success");
 			initialResponse.put("id", id);
 			
-			JSONObject result_size = new JSONObject();
-			result_size.put("resultSize", resultSize);
-			response.add(result_size.toJSONString());
+			this.subscribeIDs.put(id, new ServerSubscribeResponse(this.server,this.out,template));
+			
+			return response;
+		}
+		
+		private ArrayList<String> unsubscribe(String id){
+			ArrayList<String> response = new ArrayList<String>();
+			if(!this.subscribeIDs.containsKey(id)){
+				response.add(this.generate_error_message("no matching id found"));
+				return response;
+			}
+			
+			response.add(this.generate_success_message());
+			return response;
+		}
+		
+		
+		private ArrayList<String> terminate(){
+			ArrayList<String> response = new ArrayList<String>();
+			
+			Iterator iter = this.subscribeIDs.entrySet().iterator();
+			while(iter.hasNext()){
+				Map.Entry pair = (Map.Entry)iter.next();
+		        ServerSubscribeResponse res = (ServerSubscribeResponse) pair.getValue();
+		        this.resultSize+= res.getResultSize();
+		        res.stopThread();
+			}
+			
+			response.add(this.generate_success_message());
 			return response;
 		}
 

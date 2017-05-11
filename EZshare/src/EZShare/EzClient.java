@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.rmi.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Scanner;
 
 import org.json.simple.*;
 import org.json.simple.parser.JSONParser;
@@ -268,6 +269,8 @@ public class EzClient {
 		String message = generate_message(args).toJSONString();
 		Socket s = null;
 	    ArrayList<String> datas = new ArrayList<String>();
+	    Scanner scanner = new Scanner(System.in);
+        
 		
 		try{
 		    s = new Socket(hostname,port);  
@@ -284,39 +287,44 @@ public class EzClient {
 		    	System.out.println("please use -debug in commands for more debug information");
 		    }
 		    
-		    out.writeUTF(message); // UTF is a string encoding see Sn. 4.4
 		    
-		    out.flush();
-		    JSONParser parser = new JSONParser();
 		    boolean finished = false;
-		    boolean result_0 = true;
 		    
-		    if(command.equals("fetch")||command.equals("query")){
-		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
-		    	if(response.get("response").equals("success")){
-		    		datas.add(response.toJSONString());
-		    		while(!finished){
-		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
-		    			if(next.containsKey("resultSize")){
-		    				if((Long)next.get("resultSize")==1){
-		    					result_0 = false;
-		    				}
-		    				datas.add(next.toJSONString());
-		    				finished = true;
-		    			}else{
-		    				datas.add(next.toJSONString());
+		    while(!finished){
+		    	
+		    	out.writeUTF(message);
+		    
+		    	out.flush();
+		    	JSONParser parser = new JSONParser();
+		    
+		    	boolean result_0 = true;
+		    
+		    	if(command.equals("fetch")||command.equals("query")){
+		    		JSONObject response = (JSONObject) parser.parse(in.readUTF());
+		    		if(response.get("response").equals("success")){
+		    			datas.add(response.toJSONString());
+		    			while(!finished){
+		    				JSONObject next = (JSONObject) parser.parse(in.readUTF());
+		    					if(next.containsKey("resultSize")){
+		    						if((Long)next.get("resultSize")==1){
+		    							result_0 = false;
+		    						}
+		    						datas.add(next.toJSONString());
+		    						finished = true;
+		    					}else{
+		    						datas.add(next.toJSONString());
+		    					}
 		    			}
-		    		}
 		    		
 		    		// downloading file for fetch command
-		    		if(command.equals("fetch")) { 
-				    	//System.out.println("HHHHHH:" + data.substring(data.length()-2, data.length()));
-				    	if (!result_0){ 
+		    			if(command.equals("fetch")) { 
+		    				//System.out.println("HHHHHH:" + data.substring(data.length()-2, data.length()));
+		    				if (!result_0){ 
 				    	
-				    		URI u = new URI(uri2);	
-				    		File f = new File(u);
-				    		if(f.exists()) {
-				    			// The file location
+		    					URI u = new URI(uri2);	
+		    					File f = new File(u);
+		    					if(f.exists()) {
+		    						// The file location
 				    				String fileName = fileName2;
 							
 				    				// Create a RandomAccessFile to read and write the output file.
@@ -351,21 +359,22 @@ public class EzClient {
 				    				}
 				    				System.out.println("File received!");
 				    				downloadingFile.close();
-				    		}
-				    } 
-				  }
-		    	}else{
-		    		datas.add(response.toJSONString());
-		    	}
+		    					}
+		    				} 
+		    			}
+		    		}else{
+		    			datas.add(response.toJSONString());
+		    			finished =true;
+		    		}
 		    	
-		    }else if(command.equals("subscribe")){
-		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
-		    	if(response.get("response").equals("success")){
-		    		System.out.println(response.toJSONString());
-		    		while(!finished){
-		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
-		    			if(next.containsKey("resultSize")){
-		    				if((Long)next.get("resultSize")==1){
+		    	}else if(command.equals("subscribe")){
+		    		JSONObject response = (JSONObject) parser.parse(in.readUTF());
+		    		if(response.get("response").equals("success")){
+		    			System.out.println(response.toJSONString());
+		    			while(!finished){
+		    				JSONObject next = (JSONObject) parser.parse(in.readUTF());
+		    				if(next.containsKey("resultSize")){
+		    					if((Long)next.get("resultSize")==1){
 		    					result_0 = false;
 		    				}
 		    				System.out.println(next.toJSONString());
@@ -376,12 +385,14 @@ public class EzClient {
 		    		}
 		    	}
 		    	
-		    }else{
-		    	datas.add(in.readUTF());
+		    	}else{
+		    		datas.add(in.readUTF());
+		    		finished = true;
+		    	}
+		    	
+		    
 		    }
-		    
-		    
-		    s.close();
+		    	s.close();
 		}catch(UnknownHostException e){
 			System.out.println("can't identify host name");
 			e.printStackTrace();
