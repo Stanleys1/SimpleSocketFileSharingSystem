@@ -213,6 +213,7 @@ public class EzClient {
 					System.exit(0);
 				}
 				command = "subscribe";
+				return message;
 			}
 			//fetch command
 			if(cmd.hasOption("fetch")){
@@ -356,6 +357,25 @@ public class EzClient {
 		    	}else{
 		    		datas.add(response.toJSONString());
 		    	}
+		    	
+		    }else if(command.equals("subscribe")){
+		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
+		    	if(response.get("response").equals("success")){
+		    		System.out.println(response.toJSONString());
+		    		while(!finished){
+		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
+		    			if(next.containsKey("resultSize")){
+		    				if((Long)next.get("resultSize")==1){
+		    					result_0 = false;
+		    				}
+		    				System.out.println(next.toJSONString());
+		    				finished = true;
+		    			}else{
+		    				System.out.println(next.toJSONString());
+		    			}
+		    		}
+		    	}
+		    	
 		    }else{
 		    	datas.add(in.readUTF());
 		    }
@@ -374,7 +394,6 @@ public class EzClient {
 		}
 		//print debug information
 		if(debug){
-			System.out.print("RECEIVED:");
 			for(int i = 0 ;i <datas.size();i++){
 				System.out.println(datas.get(i));
 			}

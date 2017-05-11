@@ -12,6 +12,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
@@ -35,11 +36,13 @@ public class Service extends Thread{
 	private String secret;
 	private String command;
 	private boolean debug;
+	private boolean finished;
 	
-	
-	private int resultSize2;
 	private String fileName;
 	private String shareFileName;
+	
+	private HashMap<String, Thread> subscribeIDs;
+	private int resultSize = 0;
 	
 	public Service(){
 		super();
@@ -49,6 +52,7 @@ public class Service extends Thread{
 		this.clientSocket = clientSocket;
 		this.server = server;
 		this.debug = debug;
+		this.finished= false;
 		this.start();
 	}
 	
@@ -62,22 +66,23 @@ public class Service extends Thread{
 		try{
 			in = new DataInputStream(clientSocket.getInputStream());
 			out = new DataOutputStream(clientSocket.getOutputStream());
-			String input = in.readUTF();
-			if(debug){
-				System.out.println("RECEIVED:"+ input);
-			}
-			ArrayList<String> output = JSONOperator(input);
-			
-			for(int i = 0 ; i<output.size();i++){
+			while(!finished){
+				String input = in.readUTF();
 				if(debug){
-					System.out.println("SENT:"+ output.get(i));
+					System.out.println("RECEIVED:"+ input);
 				}
-				out.writeUTF(output.get(i));
+				ArrayList<String> output = JSONOperator(input);
+				for(int i = 0 ; i<output.size();i++){
+					if(debug){
+						System.out.println("SENT:"+ output.get(i));
+					}
+					out.writeUTF(output.get(i));
+				}
 			}
 			
 			if(command.equals("FETCH")) {
 				System.out.println("________"+ fileName);	
-				if(resultSize2 != 0) {
+				if(resultSize != 0) {
 					URI u = new URI(uri);	
 					File f = new File(u);
 					if(f.exists()) {
@@ -151,9 +156,11 @@ public class Service extends Thread{
 				command =(String)obj.get("command");
 			}catch(NullPointerException e){
 				response.add(generate_error_message("missing command"));
+				this.finished = true;
 				return response;
 			}catch(ClassCastException e){
 				response.add(generate_error_message("missing command"));
+				this.finished = true;
 				return response;
 			}
 			//dealing with query command
@@ -164,19 +171,76 @@ public class Service extends Thread{
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
 				}catch(NullPointerException e){
 					response.add(generate_error_message("missing resourceTemplate"));
+					this.finished = true;
 					return response ;
 				}catch(ClassCastException e){
 					response.add(generate_error_message("missing resourceTemplate"));
+					this.finished = true;
 					return response ;
 				}
 				
 				if(!getResource(rcsTemplate)){
 					response.add(generate_error_message("invalid resourceTemplate"));
+					this.finished = true;
 					return response ;
 				}
 				response = query(relay);
+				this.finished = true;
 				return response;
 			}
+			
+			
+			
+			
+			if(command.equals("SUBSCRIBE")){
+				boolean relay = false;
+				String id = "";
+				try{
+					relay = (boolean)obj.get("relay");
+					id = (String)obj.get("id");
+					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
+				}catch(NullPointerException e){
+					response.add(generate_error_message("missing resourceTemplate"));
+					return response ;
+				}catch(ClassCastException e){
+					response.add(generate_error_message("missing resourceTemplate"));
+					return response ;
+				}
+				if(!getResource(rcsTemplate)){
+					response.add(generate_error_message("invalid resourceTemplate"));
+					return response ;
+				}
+				response = subscribe(relay,id);
+				return response;
+			}
+			
+			if(command.equals("TERMINATE")){
+				finished = true;
+				response = terminate();
+				return response;
+			}
+			
+			if(command.equals("UNSUBSCRIBE")){
+				String id= "";
+				try{
+					id = (String)obj.get("id");
+				}catch(NullPointerException e){
+					response.add(generate_error_message("missing resourceTemplate"));
+					return response ;
+				}catch(ClassCastException e){
+					response.add(generate_error_message("missing resourceTemplate"));
+					return response ;
+				}
+				if(!getResource(rcsTemplate)){
+					response.add(generate_error_message("invalid resourceTemplate"));
+					return response ;
+				}
+				response = unsubscribe(id);
+				return response;
+			}
+			
+			
+			
 			//dealing with exchange command
 			if(command.equals("EXCHANGE")){
 				sl = new JSONArray();
@@ -184,20 +248,24 @@ public class Service extends Thread{
 					sl = (JSONArray)obj.get("serverList");
 				}catch(NullPointerException e){
 					response.add(generate_error_message("missing or invalid server list"));
+					this.finished= true;
 					return response;
 				}catch(ClassCastException e){
 					response.add(generate_error_message("missing or invalid server list"));
+					this.finished= true;
 					return response;
 				}
 				
 				String[] serverList = getServerList(sl);
 				if(serverList.length==0){
 					response.add(generate_error_message("missing server list"));
+					this.finished= true;
 					return response;
 				}
 				
 				
 				response = exchange(serverList);
+				this.finished= true;
 				return response;
 				
 			}
@@ -209,14 +277,17 @@ public class Service extends Thread{
 					//System.out.println(rcs.toJSONString());
 				}catch(NullPointerException e){
 					response.add( generate_error_message("missing resource"));
+					this.finished= true;
 					return response;
 				}catch(ClassCastException e){
 					response.add( generate_error_message("missing resource"));
+					this.finished= true;
 					return response;
 				}
 				//URI must be absolute,owner cannot be * and correct resource field
 				if(!getResource(rcs)||owner.equals("*")){
 					response.add( generate_error_message("invalid resource"));
+					this.finished= true;
 					return response;
 				}
 				
@@ -224,6 +295,7 @@ public class Service extends Thread{
 				case "REMOVE":
 					if(!HelperFunction.isURI(uri)){
 						response.add( generate_error_message("invalid resource"));
+						this.finished= true;
 						return response;
 					}
 					
@@ -232,6 +304,7 @@ public class Service extends Thread{
 				case "PUBLISH":
 					if(!HelperFunction.isURI(uri) || HelperFunction.isFileName(uri)){
 						response.add( generate_error_message("invalid resource"));
+						this.finished= true;
 						return response;
 					}
 					response = publish();
@@ -239,23 +312,27 @@ public class Service extends Thread{
 				case "SHARE":
 					if(!HelperFunction.isFileScheme(uri)){
 						response.add( generate_error_message("invalid resource"));
+						this.finished= true;
 						return response;
 					}
 					// check if secret value is given
 					secret =(String)obj.get("secret");
 					if(secret.equals("")){
 						response.add( generate_error_message("missing resource and/or secret"));
+						this.finished= true;
 						return response;
 					}		
 					// check if secret value is same as server secret
 					if(!secret.equals(server.getSecret())){
 						response.add( generate_error_message("incorrect secret"));
+						this.finished= true;
 						return response;
 					}
 					response = share();
 					break;
 				default: break;
 				}
+				this.finished= true;
 				return response;
 			}
 			//dealing with fetch command
@@ -264,32 +341,39 @@ public class Service extends Thread{
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
 				}catch(NullPointerException e){
 					response.add( generate_error_message("missing resourceTemplate"));
+					this.finished= true;
 					return response;
 				}catch(ClassCastException e){
 					response.add( generate_error_message("missing resourceTemplate"));
+					this.finished= true;
 					return response;
 				}
 				
 				
 				if(!getResource(rcsTemplate)){
 					response.add( generate_error_message("invalid resourceTemplate"));
+					this.finished= true;
 					return response;
 				}
 				
 				if(channel.equals("")){
 					response.add( generate_error_message("invalid channel"));
+					this.finished= true;
 					return response;
 				}
 				// check if it is a file
 				if(!HelperFunction.isFileScheme(uri)){
 					response.add( generate_error_message("invalid File"));
+					this.finished= true;
 					return response;
 				}
 				response = fetch();
+				this.finished= true;
 				return response;
 				
 			}
 			response.add( generate_error_message("invalid command"));
+			this.finished= true;
 			return response;
 			
 		}
@@ -491,7 +575,6 @@ public class Service extends Thread{
 		 */
 		private ArrayList<String> fetch(){
 			
-			resultSize2 = 0;
 			ArrayList<String> response = new ArrayList<String>();
 			
 			JSONObject resource;
@@ -513,7 +596,7 @@ public class Service extends Thread{
 						
 						resource.put("resourceSize", HelperFunction.fileSize(uri));
 						response.add(resource.toJSONString());
-						resultSize2 ++;
+						resultSize ++;
 						}
 					}
 				}
@@ -525,7 +608,7 @@ public class Service extends Thread{
 			}
 			JSONObject result = new JSONObject();
 			//add the information of file's size 
-			result.put("resultSize", resultSize2);
+			result.put("resultSize", resultSize);
 			response.add(result.toJSONString());
 			
 			return response;
@@ -540,8 +623,6 @@ public class Service extends Thread{
 		 * @return response message for one query command 
 		 */
 		private ArrayList<String> query(boolean relay){
-			//result size of query
-			int resultSize = 0;
 			ArrayList<String> response = new ArrayList<String>();
 			
 			response.add(this.generate_success_message());
@@ -627,6 +708,32 @@ public class Service extends Thread{
 			result.put("resultSize", resultSize);
 			response.add(result.toJSONString());
 			
+			return response;
+		}
+		
+		//TODO
+		//RELAYYYYYY AND SUBSCRIBE
+		private ArrayList<String> subscribe(boolean relay, String id){
+			
+			ArrayList<String> response = new ArrayList<String>();
+			JSONObject initialResponse = new JSONObject();
+			
+			
+			if(this.subscribeIDs == null){
+				this.subscribeIDs = new HashMap<String,Thread>();
+			}else{
+				if(this.subscribeIDs.containsKey(id)){
+					response.add(this.generate_error_message("existing id"));
+					return response;
+				}
+			}
+			
+			initialResponse.put("response","success");
+			initialResponse.put("id", id);
+			
+			JSONObject result_size = new JSONObject();
+			result_size.put("resultSize", resultSize);
+			response.add(result_size.toJSONString());
 			return response;
 		}
 
@@ -731,4 +838,9 @@ public class Service extends Thread{
 			
 			return true;
 		}
+		
+		private void addResultSize(){
+			this.resultSize+=1;
+		}
+		
 }
