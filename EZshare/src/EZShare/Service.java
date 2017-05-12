@@ -44,6 +44,7 @@ public class Service extends Thread{
 	
 	private HashMap<String, ServerSubscribeResponse> subscribeIDs;
 	private int resultSize = 0;
+	private boolean notadded = false;
 	
 	public Service(){
 		super();
@@ -422,6 +423,8 @@ public class Service extends Thread{
 				}
 				
 			}
+			
+			this.server.notifyThreads(publish_resource);
 			//new resource is added into server resourceArray
 			response.add(generate_success_message());
 			return response;
@@ -490,6 +493,7 @@ public class Service extends Thread{
 				e.printStackTrace();
 			}
 			response.add(generate_success_message());
+			this.server.notifyThreads(share_resource);
 			return response;
 		}
 		/*
@@ -749,6 +753,11 @@ public class Service extends Thread{
 			Resource template=new Resource(name, tagsString, description,
 					 uri,  channel, owner, ezserver);
 			
+			if(!notadded){
+				this.server.addThread(this);
+				notadded = true;
+			}
+			
 			
 			//create response thread for the subscription for the template
 			ServerSubscribeResponse s = new ServerSubscribeResponse(this.server,this.out,template);
@@ -805,6 +814,9 @@ public class Service extends Thread{
 			JSONObject result = new JSONObject();
 			result.put("resultSize", resultSize);
 			response.add(result.toJSONString());
+			
+			//remove this thread from the list in the server
+			this.server.removeThread(this);
 			
 			return response;
 		}
@@ -911,8 +923,17 @@ public class Service extends Thread{
 			return true;
 		}
 		
-		private void addResultSize(){
-			this.resultSize+=1;
+		
+		
+		public void notifySender(Resource rcs){
+			Iterator iter = this.subscribeIDs.entrySet().iterator();
+			while(iter.hasNext()){
+				Map.Entry pair = (Map.Entry)iter.next();
+				//get the thread
+		        ServerSubscribeResponse res = (ServerSubscribeResponse) pair.getValue();
+		        
+		        res.checkResource(rcs);
+			}
 		}
 		
 }

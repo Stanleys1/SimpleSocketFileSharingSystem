@@ -41,15 +41,8 @@ public class ServerSubscribeResponse  extends Thread{
 		while(!finished){
 			try {
 				
-				//TODO MUST CHANGE ALL THIS
-				JSONObject c = new JSONObject();
-				c.put("message", "sending stuff every 5 s");
-				out.writeUTF(c.toJSONString());
-				System.out.println(c.toJSONString());
-				Thread.sleep(5000);
+				sleep(5000);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
@@ -70,5 +63,16 @@ public class ServerSubscribeResponse  extends Thread{
 	public void stopThread() {
 		finished = true;
 		
+	}
+	
+	public void checkResource(Resource rcs){
+		if(rcs.match_template(this.template)){
+			try {
+				out.writeUTF(rcs.getJSON().toJSONString());
+			} catch (IOException e) {
+
+				e.printStackTrace();
+			}
+		}
 	}
 }

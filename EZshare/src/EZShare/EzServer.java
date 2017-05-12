@@ -64,7 +64,7 @@ public class EzServer implements Runnable {
 	private HashMap<String,Date> blockedIP;
 	private HelpFormatter formatter;
 	
-	
+	private ArrayList<Service> subscribeThreads;
 	/**
 	 * create new server
 	 * @param args the arguments given to the server
@@ -84,7 +84,42 @@ public class EzServer implements Runnable {
 		//serverRecords.add("localhost:10000");
 		
 		timer = new Timer();
+		this.subscribeThreads = new ArrayList<Service>();
 		
+	}
+	
+	/**
+	 * add the thread into sub threads
+	 * @param s
+	 */
+	public void addThread(Service s){
+		subscribeThreads.add(s);
+	}
+	
+	/**
+	 * remove the threads from the list
+	 * @param s
+	 */
+	public void removeThread(Service s){
+		for(int i = 0 ;i <this.subscribeThreads.size();i++){
+			if(this.subscribeThreads.get(i).equals(s)){
+				this.subscribeThreads.remove(s);
+				break;
+			}
+		}
+	}
+	
+	/**
+	 * notify all threads that changes in resource
+	 * when published or shared
+	 * @param rcs
+	 */
+	public void notifyThreads(Resource rcs){
+		System.out.println(this.subscribeThreads.size());
+		for(int i = 0 ; i<this.subscribeThreads.size();i++){
+			Service s = this.subscribeThreads.get(i);
+			s.notifySender(rcs);
+		}
 	}
 	
 	//create all the options for argument handling
