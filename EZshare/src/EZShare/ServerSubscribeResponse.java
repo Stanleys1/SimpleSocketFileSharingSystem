@@ -25,7 +25,7 @@ public class ServerSubscribeResponse  extends Thread{
 	
 	public void run(){
 		//get current matching queries from the template
-		ArrayList<Resource> r = server.getResource();
+		/*ArrayList<Resource> r = server.getResource();
 		for(int i = 0 ; i< r.size() ;i++){
 			if(r.get(i).match_template(template)){
 				try {
@@ -36,6 +36,7 @@ public class ServerSubscribeResponse  extends Thread{
 				}
 			}
 		}
+		*/
 		
 		//while not finished
 		while(!finished){

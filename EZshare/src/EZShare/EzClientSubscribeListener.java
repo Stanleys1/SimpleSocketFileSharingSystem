@@ -37,18 +37,22 @@ public class EzClientSubscribeListener extends Thread {
 		while(!finished){
 			//ask for more commands
 			System.out.println("enter next command:");
-			if(scn.hasNext()){
 				//get next line
-				String line = scn.nextLine();
-				
+			String line = scn.nextLine();
+			String args[];
 				
 				//TODO
 				//CHECK VALIDITY OF LINE
-				
-				
-				
+			if (line.isEmpty()){
+				String arg = "-terminate";
+				args = arg.split(" ");
+			}else{
 				//split the line into tokens
-				String[] args = line.split(" ");
+				args = line.split(" ");
+			}
+				
+				
+				
 				
 				
 				//generate message from the function in the client
@@ -67,7 +71,6 @@ public class EzClientSubscribeListener extends Thread {
 						break;
 					}
 				}
-			}
 			
 		}
 	}
