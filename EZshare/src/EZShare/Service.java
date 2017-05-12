@@ -772,6 +772,7 @@ public class Service extends Thread{
 				return response;
 			}else{
 				//else stop thread subscription
+				this.resultSize+= this.subscribeIDs.get(id).getResultSize();
 				this.subscribeIDs.get(id).stopThread();
 				//remove from hashmap
 				this.subscribeIDs.remove(id);
