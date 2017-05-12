@@ -69,6 +69,7 @@ public class ServerSubscribeResponse  extends Thread{
 		if(rcs.match_template(this.template)){
 			try {
 				out.writeUTF(rcs.getJSON().toJSONString());
+				resultSize++;
 			} catch (IOException e) {
 
 				e.printStackTrace();
