@@ -484,7 +484,10 @@ public class Service extends Thread{
 				//new resource is added into server resourceArray
 				if(!hasShared){
 					server.getResource().add(share_resource);
+					System.out.println("ADDED");
 				}
+				
+				
 			}
 			//sleep 1 second
 			try{
@@ -628,7 +631,7 @@ public class Service extends Thread{
 		
 		/**
 		 * dealing with query command 
-		 * @param boolean query¡ªrelay, 
+		 * @param boolean queryï¿½ï¿½relay, 
 		 *  if true, need to query the server in server records, otherwise not need
 		 * @return response message for one query command 
 		 */

@@ -126,9 +126,16 @@ public class Resource {
 	 * @return true if it matches, false otherwise
 	 */
 	public boolean match_template(Resource template){
-		if(!template.getChannel().equals(channel)){
-			return false;
+		
+		if(!template.getChannel().equals("")) {
+			if(!template.getChannel().equals(channel)){
+				return false;
+			}
 		}
+		
+		//if(!template.getChannel().equals(channel)){
+			//return false;
+		//}
 		if(!template.getOwner().equals("")){
 			if(!template.getOwner().equals(owner)){
 				return false;
