@@ -407,7 +407,7 @@ public class EzClient {
 		    		
 		    		//create a listener for further command from client
 		    		if(this.listener == null){
-			    		listener = new EzClientSubscribeListener(this,out,debug);
+			    		listener = new EzClientSubscribeListener(out,debug);
 			    		listener.start();
 			    	}
 		    		
@@ -417,10 +417,15 @@ public class EzClient {
 		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
 		    			if(next.containsKey("resultSize")){
 		    				System.out.println(next.toJSONString());
-		    				System.out.println("here");
 		    				finished = true;
 		    			}else{
-		    				System.out.println(next.toJSONString());
+		    				if(next.containsKey("response")){
+		    					if(debug){
+		    						System.out.println(next.toJSONString());
+		    					}
+		    				}else{
+		    					System.out.println(next.toJSONString());
+		    				}
 		    		}
 		    	}
 		    }
@@ -486,7 +491,7 @@ public class EzClient {
 	 * output:resource 
 	 * ezserver is initialed as null rather than "" 
 	 */
-	private Resource commands_getResource(CommandLine cmd) {
+	public static Resource commands_getResource(CommandLine cmd) {
 		String name="";
 		String description="";
 		String uri="";

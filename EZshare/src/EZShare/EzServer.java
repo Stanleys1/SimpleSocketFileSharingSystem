@@ -92,7 +92,7 @@ public class EzServer implements Runnable {
 	 * add the thread into sub threads
 	 * @param s
 	 */
-	public void addThread(Service s){
+	public void addSubThread(Service s){
 		subscribeThreads.add(s);
 	}
 	
@@ -114,11 +114,18 @@ public class EzServer implements Runnable {
 	 * when published or shared
 	 * @param rcs
 	 */
-	public void notifyThreads(Resource rcs){
-		System.out.println(this.subscribeThreads.size());
+	public void notifyThreads_Resource(Resource rcs){
+		//System.out.println(this.subscribeThreads.size());
 		for(int i = 0 ; i<this.subscribeThreads.size();i++){
 			Service s = this.subscribeThreads.get(i);
 			s.notifySender(rcs);
+		}
+	}
+	
+	public void notifyThreads_Server(ArrayList<String> servers ){
+		for(int i = 0 ; i<this.subscribeThreads.size();i++){
+			Service s = this.subscribeThreads.get(i);
+			s.checkServer(servers);
 		}
 	}
 	

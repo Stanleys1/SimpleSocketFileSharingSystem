@@ -10,17 +10,18 @@ import org.json.simple.JSONObject;
  * the subscription thread
  *
  */
-public class ServerSubscribeResponse  extends Thread{
-	private EzServer server;
+public class ServerSubscribeResponse extends Thread implements ServerSubscribe {
 	private DataOutputStream out;
 	private Resource template;
 	private boolean finished = false;
 	private int resultSize = 0;
+	//store relay for the id
+	private boolean relay;
 	
-	public ServerSubscribeResponse(EzServer server, DataOutputStream out,Resource template){
+	public ServerSubscribeResponse(DataOutputStream out,Resource template,boolean relay){
 		this.out = out;
-		this.server= server;
 		this.template= template;
+		this.relay = relay;
 	}
 	
 	public void run(){
@@ -76,5 +77,13 @@ public class ServerSubscribeResponse  extends Thread{
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public boolean getRelay(){
+		return this.relay;
+	}
+	
+	public Resource getTemplate(){
+		return this.template;
 	}
 }

@@ -22,28 +22,46 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 public class Service extends Thread{
+	//socket
 	private Socket clientSocket;
+	
+	//data output in and out
 	private DataInputStream in = null;
 	private DataOutputStream out = null;
+	
+	//resource file
 	private String name;
 	private String uri;
-	private EzServer server;
 	private JSONArray tags;
 	private String[] tagsString;
 	private String description;
 	private String channel;
 	private String ezserver;
 	private String owner;
+	
+	//server
+	private EzServer server;
+	
+	//secret and command
 	private String secret;
 	private String command;
+	
+	//debug
 	private boolean debug;
+	
+	//finished
 	private boolean finished;
 	
+	//file name for fetch
 	private String fileName;
 	private String shareFileName;
 	
-	private HashMap<String, ServerSubscribeResponse> subscribeIDs;
+	//subscribeIDs for subscribe
+	private HashMap<String, ArrayList<ServerSubscribe>> subscribeIDs;
+	
+	//result size of the search
 	private int resultSize = 0;
+	//boolean check for subscribe
 	private boolean notadded = false;
 	
 	public Service(){
@@ -236,10 +254,10 @@ public class Service extends Thread{
 				try{
 					id = (String)obj.get("id");
 				}catch(NullPointerException e){
-					response.add(generate_error_message("missing resourceTemplate"));
+					response.add(generate_error_message("missing id"));
 					return response ;
 				}catch(ClassCastException e){
-					response.add(generate_error_message("missing resourceTemplate"));
+					response.add(generate_error_message("missing id"));
 					return response ;
 				}
 				response = unsubscribe(id);
@@ -424,7 +442,7 @@ public class Service extends Thread{
 				
 			}
 			
-			this.server.notifyThreads(publish_resource);
+			this.server.notifyThreads_Resource(publish_resource);
 			//new resource is added into server resourceArray
 			response.add(generate_success_message());
 			return response;
@@ -493,7 +511,7 @@ public class Service extends Thread{
 				e.printStackTrace();
 			}
 			response.add(generate_success_message());
-			this.server.notifyThreads(share_resource);
+			this.server.notifyThreads_Resource(share_resource);
 			return response;
 		}
 		/*
@@ -537,6 +555,7 @@ public class Service extends Thread{
 		 */
 		private ArrayList<String> exchange(String[] serverlist){
 			ArrayList<String> response = new ArrayList<String>();
+			ArrayList<String> addedServer = new ArrayList<String>();
 			boolean duplicate = false;
 			boolean isThisServer = false;
 			String currentServer = server.getHostName()+":"+server.getPort();
@@ -563,6 +582,7 @@ public class Service extends Thread{
 						}
 					if(!duplicate && !isThisServer){
 						records.add(serverlist[i]);
+						addedServer.add(serverlist[i]);
 						}
 					}
 				//sleep 1 seconds
@@ -573,6 +593,7 @@ public class Service extends Thread{
 					}				
 				}
 			response.add(generate_success_message());
+			this.server.notifyThreads_Server(addedServer);
 			return response;
 		}
 		
@@ -721,8 +742,6 @@ public class Service extends Thread{
 			return response;
 		}
 		
-		//TODO
-		//RELAYYYYYY AND SUBSCRIBE
 		private ArrayList<String> subscribe(boolean relay, String id){
 			
 			ArrayList<String> response = new ArrayList<String>();
@@ -730,7 +749,7 @@ public class Service extends Thread{
 			
 			//create list of threads to handle the subscription
 			if(this.subscribeIDs == null){
-				this.subscribeIDs = new HashMap<String,ServerSubscribeResponse>();
+				this.subscribeIDs = new HashMap<String,ArrayList<ServerSubscribe>>();
 			}else{
 				//reject if id already present
 				if(this.subscribeIDs.containsKey(id)){
@@ -754,17 +773,30 @@ public class Service extends Thread{
 					 uri,  channel, owner, ezserver);
 			
 			if(!notadded){
-				this.server.addThread(this);
+				this.server.addSubThread(this);
 				notadded = true;
 			}
 			
 			
 			//create response thread for the subscription for the template
-			ServerSubscribeResponse s = new ServerSubscribeResponse(this.server,this.out,template);
+			ServerSubscribeResponse s = new ServerSubscribeResponse(this.out,template,relay);
 			s.start();
+			ArrayList<ServerSubscribe> subthreads = new ArrayList<ServerSubscribe>();
+			subthreads.add(s);
+			
+			if(relay){
+				ArrayList<String> servers = this.server.getServerRecord();
+				for(int i = 0 ; i <servers.size();i++){
+					String server = servers.get(i);
+					ServerSubscribeClient client = new ServerSubscribeClient(server,debug
+							,template,id,this.out);
+					client.start();
+					subthreads.add(client);
+				}
+			}
 			
 			//put the thread into the hashmap with the id
-			this.subscribeIDs.put(id, s );
+			this.subscribeIDs.put(id, subthreads);
 			
 			return response;
 		}
@@ -781,8 +813,12 @@ public class Service extends Thread{
 				return response;
 			}else{
 				//else stop thread subscription
-				this.resultSize+= this.subscribeIDs.get(id).getResultSize();
-				this.subscribeIDs.get(id).stopThread();
+				ArrayList<ServerSubscribe> subthreads =  this.subscribeIDs.get(id);
+				for(int i = 0 ;i <subthreads.size();i++){
+					ServerSubscribe subthread = subthreads.get(i);
+					this.resultSize+= subthread.getResultSize();
+					subthread.stopThread();
+				}
 				//remove from hashmap
 				this.subscribeIDs.remove(id);
 			}
@@ -802,11 +838,15 @@ public class Service extends Thread{
 			while(iter.hasNext()){
 				Map.Entry pair = (Map.Entry)iter.next();
 				//get the thread
-		        ServerSubscribeResponse res = (ServerSubscribeResponse) pair.getValue();
-		        //add the resultSize for each thread
-		        this.resultSize+= res.getResultSize();
-		        //stop each thread
-		        res.stopThread();
+				
+				ArrayList<ServerSubscribe> subThreads = (ArrayList<ServerSubscribe>)pair.getValue();
+		        for(int i = 0 ; i < subThreads.size();i++){
+		        	ServerSubscribe subThread = subThreads.get(i);
+		        	//add the resultSize for each thread
+		        	this.resultSize+= subThread.getResultSize();
+		        	//stop each thread
+		        	subThread.stopThread();
+		        }
 			}
 			
 			response.add(this.generate_success_message());
@@ -929,11 +969,50 @@ public class Service extends Thread{
 			Iterator iter = this.subscribeIDs.entrySet().iterator();
 			while(iter.hasNext()){
 				Map.Entry pair = (Map.Entry)iter.next();
-				//get the thread
-		        ServerSubscribeResponse res = (ServerSubscribeResponse) pair.getValue();
+				
+				ArrayList<ServerSubscribe> subs = (ArrayList<ServerSubscribe>) pair.getValue();
+				for(int i = 0; i<subs.size();i++){
+					if(subs.get(i) instanceof ServerSubscribeResponse){
+						ServerSubscribeResponse subThread = (ServerSubscribeResponse) subs.get(i);
+						subThread.checkResource(rcs);
+					}
+				}
 		        
-		        res.checkResource(rcs);
+		        
 			}
+		}
+		
+		public void checkServer(ArrayList<String> servers){
+			Iterator iter = this.subscribeIDs.entrySet().iterator();
+			while(iter.hasNext()){
+				Map.Entry pair = (Map.Entry)iter.next();
+				boolean relay = false;
+				Resource template = null;
+				String id = (String)pair.getKey();
+				ArrayList<ServerSubscribe> subs = (ArrayList<ServerSubscribe>) pair.getValue();
+				
+				for(int i = 0; i<subs.size();i++){
+					if(subs.get(i) instanceof ServerSubscribeResponse){
+						ServerSubscribeResponse subThread = (ServerSubscribeResponse) subs.get(i);
+						relay = subThread.getRelay();
+						template = subThread.getTemplate();
+						break;
+					}
+				}
+				
+				if(relay){
+					ArrayList<ServerSubscribe> threads = this.subscribeIDs.get(id);
+					for(int i = 0 ; i< servers.size();i++){
+						ServerSubscribeClient client = new ServerSubscribeClient(servers.get(i),
+								debug,template,id,this.out);
+						client.start();
+						threads.add(client);
+					}
+				}
+				
+			}
+		        
+		        
 		}
 		
 }
