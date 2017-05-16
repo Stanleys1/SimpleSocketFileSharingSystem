@@ -165,10 +165,22 @@ public class Resource {
 		}
 		
 		if(!template.getName().equals("")){
-			return name.contains(template.getName());
-		}else if(!template.getDescription().equals("")){
-			return description.contains(template.getDescription());
-		}else return true;
+			if( name.contains(template.getName())){
+				return true;
+			}
+		}
+		
+		if(!template.getDescription().equals("")){
+			if(description.contains(template.getDescription())){
+				return true;
+			}
+		}
+		
+		if(template.getName().equals("")&&template.getName().equals("")){
+			return true;
+		}
+		
+		return false;
 	}
 	
 	/**
