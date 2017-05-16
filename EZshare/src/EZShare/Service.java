@@ -145,7 +145,7 @@ public class Service extends Thread{
 			
 			
 		}catch(IOException e){
-			e.printStackTrace();
+			System.out.println("client disconnected");
 		} catch (ParseException e) {
 			e.printStackTrace();
 		} catch (org.json.simple.parser.ParseException e) {

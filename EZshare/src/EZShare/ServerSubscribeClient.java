@@ -86,13 +86,13 @@ public class ServerSubscribeClient extends Thread implements ServerSubscribe{
 				
 			}
 		} catch (UnknownHostException e) {
-			e.printStackTrace();
+			finished = true;
 		} catch (IOException e) {
-			e.printStackTrace();
+			finished = true;
 		} catch (NullPointerException e){
-			e.printStackTrace();
+			finished = true;
 		} catch (ParseException e) {
-			e.printStackTrace();
+			finished = true;
 		}
 	}
 	
