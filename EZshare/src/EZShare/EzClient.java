@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.rmi.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Scanner;
 
 import org.json.simple.*;
 import org.json.simple.parser.JSONParser;
@@ -30,13 +31,15 @@ public class EzClient {
 	private String hostname;
 	private int port;
 	private boolean query_relay= false;
-	boolean debug;
-	boolean timeout;
+	private boolean debug;
+	private boolean timeout;
+	
+	private String id;
 	
 	private String uri2;
 	private String fileName2;
 	private String command;
-	
+	private EzClientSubscribeListener listener;
 	
 	private HelpFormatter formatter;
 	
@@ -83,8 +86,12 @@ public class EzClient {
 		op.add(new Option("uri",true,"uri of the resource"));
 		op.add(new Option("help",false,"get help on all options"));
 		op.add(new Option("subscribe",false,"subscribe to server"));
+		op.add(new Option("unsubscribe",false,"unsubscribe an id to server"));
 		op.add(new Option("id", true, "id for the subscription"));
 		
+		//TODO
+		//need to be deleted
+		op.add(new Option("terminate",false,"terminate subs"));
 		
 		Options options = new Options();
 		for(int i = 0 ; i < op.size();i++){
@@ -92,12 +99,14 @@ public class EzClient {
 		}
 		return options;
 	}
+	
+	
 	/**
 	 * construct the message sent to the server in form of JsonObject  
 	 * @param arguments
 	 * @return one JSONObject - message sent to server
 	 */
-    private JSONObject generate_message(String[] args){
+    public JSONObject generate_message(String[] args){
 		JSONObject message = new JSONObject();
 		JSONArray exchange_servers= new JSONArray();
 		
@@ -202,18 +211,23 @@ public class EzClient {
 				return message;
 			}
 			
+			
 			if(cmd.hasOption("subscribe")){
 				message.put("command", "SUBSCRIBE");
 				message.put("resourceTemplate", r.getJSON());
 				message.put("relay", query_relay);
 				if(cmd.hasOption("id")){
-					message.put("id", cmd.getOptionObject("id"));
+					message.put("id", cmd.getOptionValue("id"));
+					this.id = cmd.getOptionValue("id");
 				}else{
 					System.out.println("please provide id with subscribe");
 					System.exit(0);
 				}
 				command = "subscribe";
+				return message;
 			}
+			
+	
 			//fetch command
 			if(cmd.hasOption("fetch")){
 				if(r.getUri() == ""){
@@ -267,6 +281,7 @@ public class EzClient {
 		String message = generate_message(args).toJSONString();
 		Socket s = null;
 	    ArrayList<String> datas = new ArrayList<String>();
+        
 		
 		try{
 		    s = new Socket(hostname,port);  
@@ -274,8 +289,10 @@ public class EzClient {
 		    	s.setSoTimeout(TIMEOUT);
 		    }
 		    System.out.println("Connection Established");
+		    //create input streams
 		    DataInputStream in = new DataInputStream( s.getInputStream());
 		    DataOutputStream out =new DataOutputStream( s.getOutputStream());
+		    
 		    
 		    if(debug){
 		    	 System.out.println("SENT:"+message); 
@@ -283,83 +300,126 @@ public class EzClient {
 		    	System.out.println("please use -debug in commands for more debug information");
 		    }
 		    
-		    out.writeUTF(message); // UTF is a string encoding see Sn. 4.4
+		    
+		    boolean finished = false;
+		    
+		    	
+		    out.writeUTF(message);
 		    
 		    out.flush();
 		    JSONParser parser = new JSONParser();
-		    boolean finished = false;
+		    
 		    boolean result_0 = true;
 		    
+		    //if command == fetch or query
+		    //wait for multiple readings until resultSize is obtained
 		    if(command.equals("fetch")||command.equals("query")){
 		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
 		    	if(response.get("response").equals("success")){
 		    		datas.add(response.toJSONString());
 		    		while(!finished){
 		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
-		    			if(next.containsKey("resultSize")){
-		    				if((Long)next.get("resultSize")==1){
-		    					result_0 = false;
+		    				if(next.containsKey("resultSize")){
+		    					if((Long)next.get("resultSize")==1){
+		    						result_0 = false;
+		    					}
+		    					datas.add(next.toJSONString());
+		    					finished = true;
+		    				}else{
+		    					datas.add(next.toJSONString());
 		    				}
-		    				datas.add(next.toJSONString());
-		    				finished = true;
-		    			}else{
-		    				datas.add(next.toJSONString());
-		    			}
 		    		}
 		    		
 		    		// downloading file for fetch command
 		    		if(command.equals("fetch")) { 
-				    	//System.out.println("HHHHHH:" + data.substring(data.length()-2, data.length()));
-				    	if (!result_0){ 
+		    			//System.out.println("HHHHHH:" + data.substring(data.length()-2, data.length()));
+		    			if (!result_0){ 
 				    	
-				    		URI u = new URI(uri2);	
-				    		File f = new File(u);
-				    		if(f.exists()) {
-				    			// The file location
-				    				String fileName = fileName2;
+		    				URI u = new URI(uri2);	
+		    				File f = new File(u);
+		    				if(f.exists()) {
+		    					// The file location
+				    			String fileName = fileName2;
 							
-				    				// Create a RandomAccessFile to read and write the output file.
-				    				RandomAccessFile downloadingFile = new RandomAccessFile(fileName, "rw");
+				    			// Create a RandomAccessFile to read and write the output file.
+				    			RandomAccessFile downloadingFile = new RandomAccessFile(fileName, "rw");
 						
-				    				long fileSizeRemaining = (Long) f.length();
+				    			long fileSizeRemaining = (Long) f.length();
 						
-				    				int chunkSize = setChunkSize(fileSizeRemaining);
+				    			int chunkSize = setChunkSize(fileSizeRemaining);
 						
 				    				// Represents the receiving buffer
-				    				byte[] receiveBuffer = new byte[chunkSize];
+				    			byte[] receiveBuffer = new byte[chunkSize];
 						
-				    				// Variable used to read if there are remaining size left to read.
-				    				int num;
+				    			// Variable used to read if there are remaining size left to read.
+				    			int num;
 						
-				    				System.out.println("Downloading "+fileName+" of size "+fileSizeRemaining);
-				    				while((num=in.read(receiveBuffer))>0){
-				    					// Write the received bytes into the RandomAccessFile
-				    					downloadingFile.write(Arrays.copyOf(receiveBuffer, num));
+				    			System.out.println("Downloading "+fileName+" of size "+fileSizeRemaining);
+				    			while((num=in.read(receiveBuffer))>0){
+				    				// Write the received bytes into the RandomAccessFile
+				    				downloadingFile.write(Arrays.copyOf(receiveBuffer, num));
 							
-				    					// Reduce the file size left to read..
-				    					fileSizeRemaining-=num;
+				    				// Reduce the file size left to read..
+				    				fileSizeRemaining-=num;
 							
-				    					// Set the chunkSize again
-				    					chunkSize = setChunkSize(fileSizeRemaining);
-				    					receiveBuffer = new byte[chunkSize];
+				    				// Set the chunkSize again
+				    				chunkSize = setChunkSize(fileSizeRemaining);
+				    				receiveBuffer = new byte[chunkSize];
 							
-				    					// If you're done then break
-				    					if(fileSizeRemaining==0){
-				    						break;
-				    					}
+				    				// If you're done then break
+				    				if(fileSizeRemaining==0){
+				    					break;
 				    				}
-				    				System.out.println("File received!");
-				    				downloadingFile.close();
-				    		}
-				    } 
-				  }
+				    			}
+				    			System.out.println("File received!");
+				    			downloadingFile.close();
+		    				}
+		    			} 
+		    		}
+		    	//if response failed, just get the message
 		    	}else{
 		    		datas.add(response.toJSONString());
 		    	}
-		    }else{
-		    	datas.add(in.readUTF());
+		    
+		    	//if subscribe
+		    }else if(command.equals("subscribe")){
+		    		
+		    	//read response
+		    	JSONObject response = (JSONObject) parser.parse(in.readUTF());
+		    	//if response succeeds
+		    	if(response.get("response").equals("success")){
+		    		System.out.println(response.toJSONString());
+		    		
+		    		//create a listener for further command from client
+		    		if(this.listener == null){
+			    		listener = new EzClientSubscribeListener(out,debug,this.id);
+			    		listener.start();
+			    	}
+		    		
+		    		//while it is not finished (no resultSize is given
+		    		//read all entries
+		    		while(!finished){
+		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
+		    			if(next.containsKey("resultSize")){
+		    				System.out.println(next.toJSONString());
+		    				finished = true;
+		    			}else{
+		    				if(next.containsKey("response")){
+		    					if(debug){
+		    						System.out.println(next.toJSONString());
+		    					}
+		    				}else{
+		    					System.out.println(next.toJSONString());
+		    				}
+		    		}
+		    	}
 		    }
 		    
+		    	//if its not the commands mentioned above, just read the datas
+		   }else{
+		    	datas.add(in.readUTF());
+		    }
+		    	
 		    
 		    s.close();
 		}catch(UnknownHostException e){
@@ -374,7 +434,6 @@ public class EzClient {
 		}
 		//print debug information
 		if(debug){
-			System.out.print("RECEIVED:");
 			for(int i = 0 ;i <datas.size();i++){
 				System.out.println(datas.get(i));
 			}
@@ -417,7 +476,7 @@ public class EzClient {
 	 * output:resource 
 	 * ezserver is initialed as null rather than "" 
 	 */
-	private Resource commands_getResource(CommandLine cmd) {
+	public static Resource commands_getResource(CommandLine cmd) {
 		String name="";
 		String description="";
 		String uri="";

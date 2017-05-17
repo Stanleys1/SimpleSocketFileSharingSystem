@@ -28,6 +28,7 @@ public class Client {
 
 		}catch(NullPointerException e){
 			System.out.println("null pointer in client found");
+			e.printStackTrace();
 		}catch(IOException e){
 			System.out.println("IO problems in client found");
 		}

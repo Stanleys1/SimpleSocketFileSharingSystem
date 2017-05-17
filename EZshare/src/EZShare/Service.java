@@ -12,34 +12,57 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 public class Service extends Thread{
+	//socket
 	private Socket clientSocket;
+	
+	//data output in and out
 	private DataInputStream in = null;
 	private DataOutputStream out = null;
+	
+	//resource file
 	private String name;
 	private String uri;
-	private EzServer server;
 	private JSONArray tags;
 	private String[] tagsString;
 	private String description;
 	private String channel;
 	private String ezserver;
 	private String owner;
+	
+	//server
+	private EzServer server;
+	
+	//secret and command
 	private String secret;
 	private String command;
+	
+	//debug
 	private boolean debug;
 	
+	//finished
+	private boolean finished;
 	
-	private int resultSize2;
+	//file name for fetch
 	private String fileName;
 	private String shareFileName;
+	
+	//subscribeIDs for subscribe
+	private HashMap<String, ArrayList<ServerSubscribe>> subscribeIDs;
+	
+	//result size of the search
+	private int resultSize = 0;
+	//boolean check for subscribe
+	private boolean notadded = false;
 	
 	public Service(){
 		super();
@@ -49,6 +72,7 @@ public class Service extends Thread{
 		this.clientSocket = clientSocket;
 		this.server = server;
 		this.debug = debug;
+		this.finished= false;
 		this.start();
 	}
 	
@@ -62,22 +86,30 @@ public class Service extends Thread{
 		try{
 			in = new DataInputStream(clientSocket.getInputStream());
 			out = new DataOutputStream(clientSocket.getOutputStream());
-			String input = in.readUTF();
-			if(debug){
-				System.out.println("RECEIVED:"+ input);
-			}
-			ArrayList<String> output = JSONOperator(input);
 			
-			for(int i = 0 ; i<output.size();i++){
+			//as long it is not finished
+			//keep reading and sending (for asynchronous connection)
+			while(!finished){
+				String input = in.readUTF();
 				if(debug){
-					System.out.println("SENT:"+ output.get(i));
+					System.out.println("RECEIVED:"+ input);
 				}
-				out.writeUTF(output.get(i));
+				ArrayList<String> output = JSONOperator(input);
+				
+				if(output.size()>0){
+					for(int i = 0 ; i<output.size();i++){
+						if(debug){
+							System.out.println("SENT:"+ output.get(i));
+						}
+						out.writeUTF(output.get(i));
+					}
+				}
 			}
 			
+			//if command is fetch, send the file
 			if(command.equals("FETCH")) {
 				System.out.println("________"+ fileName);	
-				if(resultSize2 != 0) {
+				if(resultSize != 0) {
 					URI u = new URI(uri);	
 					File f = new File(u);
 					if(f.exists()) {
@@ -113,7 +145,7 @@ public class Service extends Thread{
 			
 			
 		}catch(IOException e){
-			e.printStackTrace();
+			System.out.println("client disconnected");
 		} catch (ParseException e) {
 			e.printStackTrace();
 		} catch (org.json.simple.parser.ParseException e) {
@@ -151,9 +183,11 @@ public class Service extends Thread{
 				command =(String)obj.get("command");
 			}catch(NullPointerException e){
 				response.add(generate_error_message("missing command"));
+				this.finished = true;
 				return response;
 			}catch(ClassCastException e){
 				response.add(generate_error_message("missing command"));
+				this.finished = true;
 				return response;
 			}
 			//dealing with query command
@@ -164,19 +198,68 @@ public class Service extends Thread{
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
 				}catch(NullPointerException e){
 					response.add(generate_error_message("missing resourceTemplate"));
+					this.finished = true;
 					return response ;
 				}catch(ClassCastException e){
 					response.add(generate_error_message("missing resourceTemplate"));
+					this.finished = true;
 					return response ;
 				}
 				
 				if(!getResource(rcsTemplate)){
 					response.add(generate_error_message("invalid resourceTemplate"));
+					this.finished = true;
 					return response ;
 				}
 				response = query(relay);
+				this.finished = true;
 				return response;
 			}
+			
+			
+			
+			//deal with subscribe
+			if(command.equals("SUBSCRIBE")){
+				boolean relay = false;
+				String id = "";
+				try{
+					relay = (boolean)obj.get("relay");
+					id = (String)obj.get("id");
+					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
+				}catch(NullPointerException e){
+					response.add(generate_error_message("missing resourceTemplate"));
+					return response ;
+				}catch(ClassCastException e){
+					response.add(generate_error_message("missing resourceTemplate"));
+					return response ;
+				}
+				if(!getResource(rcsTemplate)){
+					response.add(generate_error_message("invalid resourceTemplate"));
+					return response ;
+				}
+				response = subscribe(relay,id);
+				return response;
+			}
+			
+			
+			//deal with unsubscribe
+			if(command.equals("UNSUBSCRIBE")){
+				String id= "";
+				try{
+					id = (String)obj.get("id");
+				}catch(NullPointerException e){
+					response.add(generate_error_message("missing id"));
+					return response ;
+				}catch(ClassCastException e){
+					response.add(generate_error_message("missing id"));
+					return response ;
+				}
+				response = unsubscribe(id);
+				return response;
+			}
+			
+			
+			
 			//dealing with exchange command
 			if(command.equals("EXCHANGE")){
 				sl = new JSONArray();
@@ -184,20 +267,24 @@ public class Service extends Thread{
 					sl = (JSONArray)obj.get("serverList");
 				}catch(NullPointerException e){
 					response.add(generate_error_message("missing or invalid server list"));
+					this.finished= true;
 					return response;
 				}catch(ClassCastException e){
 					response.add(generate_error_message("missing or invalid server list"));
+					this.finished= true;
 					return response;
 				}
 				
 				String[] serverList = getServerList(sl);
 				if(serverList.length==0){
 					response.add(generate_error_message("missing server list"));
+					this.finished= true;
 					return response;
 				}
 				
 				
 				response = exchange(serverList);
+				this.finished= true;
 				return response;
 				
 			}
@@ -209,14 +296,17 @@ public class Service extends Thread{
 					//System.out.println(rcs.toJSONString());
 				}catch(NullPointerException e){
 					response.add( generate_error_message("missing resource"));
+					this.finished= true;
 					return response;
 				}catch(ClassCastException e){
 					response.add( generate_error_message("missing resource"));
+					this.finished= true;
 					return response;
 				}
 				//URI must be absolute,owner cannot be * and correct resource field
 				if(!getResource(rcs)||owner.equals("*")){
 					response.add( generate_error_message("invalid resource"));
+					this.finished= true;
 					return response;
 				}
 				
@@ -224,6 +314,7 @@ public class Service extends Thread{
 				case "REMOVE":
 					if(!HelperFunction.isURI(uri)){
 						response.add( generate_error_message("invalid resource"));
+						this.finished= true;
 						return response;
 					}
 					
@@ -232,6 +323,7 @@ public class Service extends Thread{
 				case "PUBLISH":
 					if(!HelperFunction.isURI(uri) || HelperFunction.isFileName(uri)){
 						response.add( generate_error_message("invalid resource"));
+						this.finished= true;
 						return response;
 					}
 					response = publish();
@@ -239,23 +331,27 @@ public class Service extends Thread{
 				case "SHARE":
 					if(!HelperFunction.isFileScheme(uri)){
 						response.add( generate_error_message("invalid resource"));
+						this.finished= true;
 						return response;
 					}
 					// check if secret value is given
 					secret =(String)obj.get("secret");
 					if(secret.equals("")){
 						response.add( generate_error_message("missing resource and/or secret"));
+						this.finished= true;
 						return response;
 					}		
 					// check if secret value is same as server secret
 					if(!secret.equals(server.getSecret())){
 						response.add( generate_error_message("incorrect secret"));
+						this.finished= true;
 						return response;
 					}
 					response = share();
 					break;
 				default: break;
 				}
+				this.finished= true;
 				return response;
 			}
 			//dealing with fetch command
@@ -264,32 +360,39 @@ public class Service extends Thread{
 					rcsTemplate = (JSONObject)obj.get("resourceTemplate");
 				}catch(NullPointerException e){
 					response.add( generate_error_message("missing resourceTemplate"));
+					this.finished= true;
 					return response;
 				}catch(ClassCastException e){
 					response.add( generate_error_message("missing resourceTemplate"));
+					this.finished= true;
 					return response;
 				}
 				
 				
 				if(!getResource(rcsTemplate)){
 					response.add( generate_error_message("invalid resourceTemplate"));
+					this.finished= true;
 					return response;
 				}
 				
 				if(channel.equals("")){
 					response.add( generate_error_message("invalid channel"));
+					this.finished= true;
 					return response;
 				}
 				// check if it is a file
 				if(!HelperFunction.isFileScheme(uri)){
 					response.add( generate_error_message("invalid File"));
+					this.finished= true;
 					return response;
 				}
 				response = fetch();
+				this.finished= true;
 				return response;
 				
 			}
 			response.add( generate_error_message("invalid command"));
+			this.finished= true;
 			return response;
 			
 		}
@@ -332,6 +435,8 @@ public class Service extends Thread{
 				}
 				
 			}
+			
+			this.server.notifyThreads_Resource(publish_resource);
 			//new resource is added into server resourceArray
 			response.add(generate_success_message());
 			return response;
@@ -391,7 +496,10 @@ public class Service extends Thread{
 				//new resource is added into server resourceArray
 				if(!hasShared){
 					server.getResource().add(share_resource);
+					System.out.println("ADDED");
 				}
+				
+				
 			}
 			//sleep 1 second
 			try{
@@ -400,6 +508,7 @@ public class Service extends Thread{
 				e.printStackTrace();
 			}
 			response.add(generate_success_message());
+			this.server.notifyThreads_Resource(share_resource);
 			return response;
 		}
 		/*
@@ -443,6 +552,7 @@ public class Service extends Thread{
 		 */
 		private ArrayList<String> exchange(String[] serverlist){
 			ArrayList<String> response = new ArrayList<String>();
+			ArrayList<String> addedServer = new ArrayList<String>();
 			boolean duplicate = false;
 			boolean isThisServer = false;
 			String currentServer = server.getHostName()+":"+server.getPort();
@@ -469,6 +579,7 @@ public class Service extends Thread{
 						}
 					if(!duplicate && !isThisServer){
 						records.add(serverlist[i]);
+						addedServer.add(serverlist[i]);
 						}
 					}
 				//sleep 1 seconds
@@ -479,6 +590,7 @@ public class Service extends Thread{
 					}				
 				}
 			response.add(generate_success_message());
+			this.server.notifyThreads_Server(addedServer);
 			return response;
 		}
 		
@@ -491,7 +603,6 @@ public class Service extends Thread{
 		 */
 		private ArrayList<String> fetch(){
 			
-			resultSize2 = 0;
 			ArrayList<String> response = new ArrayList<String>();
 			
 			JSONObject resource;
@@ -513,7 +624,7 @@ public class Service extends Thread{
 						
 						resource.put("resourceSize", HelperFunction.fileSize(uri));
 						response.add(resource.toJSONString());
-						resultSize2 ++;
+						resultSize ++;
 						}
 					}
 				}
@@ -525,7 +636,7 @@ public class Service extends Thread{
 			}
 			JSONObject result = new JSONObject();
 			//add the information of file's size 
-			result.put("resultSize", resultSize2);
+			result.put("resultSize", resultSize);
 			response.add(result.toJSONString());
 			
 			return response;
@@ -535,13 +646,11 @@ public class Service extends Thread{
 		
 		/**
 		 * dealing with query command 
-		 * @param boolean query¡ªrelay, 
+		 * @param boolean queryï¿½ï¿½relay, 
 		 *  if true, need to query the server in server records, otherwise not need
 		 * @return response message for one query command 
 		 */
 		private ArrayList<String> query(boolean relay){
-			//result size of query
-			int resultSize = 0;
 			ArrayList<String> response = new ArrayList<String>();
 			
 			response.add(this.generate_success_message());
@@ -627,6 +736,130 @@ public class Service extends Thread{
 			result.put("resultSize", resultSize);
 			response.add(result.toJSONString());
 			
+			return response;
+		}
+		
+		private ArrayList<String> subscribe(boolean relay, String id){
+			
+			ArrayList<String> response = new ArrayList<String>();
+			JSONObject initialResponse = new JSONObject();
+			
+			//create list of threads to handle the subscription
+			if(this.subscribeIDs == null){
+				this.subscribeIDs = new HashMap<String,ArrayList<ServerSubscribe>>();
+			}else{
+				//reject if id already present
+				if(this.subscribeIDs.containsKey(id)){
+					response.add(this.generate_error_message("existing id"));
+					return response;
+				}
+			}
+			//create initial response for the subscribe
+			initialResponse.put("response","success");
+			initialResponse.put("id", id);
+			
+			//send that initial response to the client to start subscription
+			try {
+				out.writeUTF(initialResponse.toJSONString());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			//create template from the client arguments
+			Resource template=new Resource(name, tagsString, description,
+					 uri,  channel, owner, ezserver);
+			
+			if(!notadded){
+				this.server.addSubThread(this);
+				notadded = true;
+			}
+			
+			
+			//create response thread for the subscription for the template
+			ServerSubscribeResponse s = new ServerSubscribeResponse(this.out,template,relay);
+			s.start();
+			ArrayList<ServerSubscribe> subthreads = new ArrayList<ServerSubscribe>();
+			subthreads.add(s);
+			
+			if(relay){
+				ArrayList<String> servers = this.server.getServerRecord();
+				for(int i = 0 ; i <servers.size();i++){
+					String server = servers.get(i);
+					ServerSubscribeClient client = new ServerSubscribeClient(server,debug
+							,template,id,this.out);
+					client.start();
+					subthreads.add(client);
+				}
+			}
+			
+			//put the thread into the hashmap with the id
+			this.subscribeIDs.put(id, subthreads);
+			
+			return response;
+		}
+		
+		
+		//function for unsubscribe
+		private ArrayList<String> unsubscribe(String id){
+			
+			ArrayList<String> response = new ArrayList<String>();
+			
+			//if there is no subscription with that id return error message
+			if(!this.subscribeIDs.containsKey(id)){
+				response.add(this.generate_error_message("no matching id found"));
+				return response;
+			}else{
+				//else stop thread subscription
+				ArrayList<ServerSubscribe> subthreads =  this.subscribeIDs.get(id);
+				for(int i = 0 ;i <subthreads.size();i++){
+					ServerSubscribe subthread = subthreads.get(i);
+					this.resultSize+= subthread.getResultSize();
+					subthread.stopThread();
+				}
+				//remove from hashmap
+				this.subscribeIDs.remove(id);
+				//empty sub
+				if(this.subscribeIDs.size() == 0){
+					return terminate();
+				}
+			}
+			
+			response.add(this.generate_success_message());
+			return response;
+		}
+		
+		
+		//terminate function
+		private ArrayList<String> terminate(){
+			
+			ArrayList<String> response = new ArrayList<String>();
+			
+			//iterate the hashmap
+			Iterator iter = this.subscribeIDs.entrySet().iterator();
+			while(iter.hasNext()){
+				Map.Entry pair = (Map.Entry)iter.next();
+				//get the thread
+				
+				ArrayList<ServerSubscribe> subThreads = (ArrayList<ServerSubscribe>)pair.getValue();
+		        for(int i = 0 ; i < subThreads.size();i++){
+		        	ServerSubscribe subThread = subThreads.get(i);
+		        	//add the resultSize for each thread
+		        	this.resultSize+= subThread.getResultSize();
+		        	//stop each thread
+		        	subThread.stopThread();
+		        }
+			}
+			
+			response.add(this.generate_success_message());
+			//add resultsize to the query message
+			JSONObject result = new JSONObject();
+			result.put("resultSize", resultSize);
+			response.add(result.toJSONString());
+			
+			//remove this thread from the list in the server
+			this.server.removeThread(this);
+			
+			this.finished = true;
 			return response;
 		}
 
@@ -731,4 +964,57 @@ public class Service extends Thread{
 			
 			return true;
 		}
+		
+		
+		
+		public void notifySender(Resource rcs){
+			Iterator iter = this.subscribeIDs.entrySet().iterator();
+			while(iter.hasNext()){
+				Map.Entry pair = (Map.Entry)iter.next();
+				
+				ArrayList<ServerSubscribe> subs = (ArrayList<ServerSubscribe>) pair.getValue();
+				for(int i = 0; i<subs.size();i++){
+					if(subs.get(i) instanceof ServerSubscribeResponse){
+						ServerSubscribeResponse subThread = (ServerSubscribeResponse) subs.get(i);
+						subThread.checkResource(rcs);
+					}
+				}
+		        
+		        
+			}
+		}
+		
+		public void checkServer(ArrayList<String> servers){
+			Iterator iter = this.subscribeIDs.entrySet().iterator();
+			while(iter.hasNext()){
+				Map.Entry pair = (Map.Entry)iter.next();
+				boolean relay = false;
+				Resource template = null;
+				String id = (String)pair.getKey();
+				ArrayList<ServerSubscribe> subs = (ArrayList<ServerSubscribe>) pair.getValue();
+				
+				for(int i = 0; i<subs.size();i++){
+					if(subs.get(i) instanceof ServerSubscribeResponse){
+						ServerSubscribeResponse subThread = (ServerSubscribeResponse) subs.get(i);
+						relay = subThread.getRelay();
+						template = subThread.getTemplate();
+						break;
+					}
+				}
+				
+				if(relay){
+					ArrayList<ServerSubscribe> threads = this.subscribeIDs.get(id);
+					for(int i = 0 ; i< servers.size();i++){
+						ServerSubscribeClient client = new ServerSubscribeClient(servers.get(i),
+								debug,template,id,this.out);
+						client.start();
+						threads.add(client);
+					}
+				}
+				
+			}
+		        
+		        
+		}
+		
 }
