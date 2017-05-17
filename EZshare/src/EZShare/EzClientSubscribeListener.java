@@ -19,6 +19,7 @@ import org.json.simple.JSONObject;
  * EzClient Subscribe listenerer
  * it creates a thread that listen to futher inputs from client
  * and send it to the server
+ * 
  */
 public class EzClientSubscribeListener extends Thread {
 	
