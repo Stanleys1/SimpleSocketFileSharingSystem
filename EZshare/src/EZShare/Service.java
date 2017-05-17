@@ -241,12 +241,6 @@ public class Service extends Thread{
 				return response;
 			}
 			
-			//deal with terminate
-			if(command.equals("TERMINATE")){
-				finished = true;
-				response = terminate();
-				return response;
-			}
 			
 			//deal with unsubscribe
 			if(command.equals("UNSUBSCRIBE")){
@@ -824,6 +818,10 @@ public class Service extends Thread{
 				}
 				//remove from hashmap
 				this.subscribeIDs.remove(id);
+				//empty sub
+				if(this.subscribeIDs.size() == 0){
+					return terminate();
+				}
 			}
 			
 			response.add(this.generate_success_message());
@@ -861,6 +859,7 @@ public class Service extends Thread{
 			//remove this thread from the list in the server
 			this.server.removeThread(this);
 			
+			this.finished = true;
 			return response;
 		}
 

@@ -31,8 +31,10 @@ public class EzClient {
 	private String hostname;
 	private int port;
 	private boolean query_relay= false;
-	boolean debug;
-	boolean timeout;
+	private boolean debug;
+	private boolean timeout;
+	
+	private String id;
 	
 	private String uri2;
 	private String fileName2;
@@ -216,6 +218,7 @@ public class EzClient {
 				message.put("relay", query_relay);
 				if(cmd.hasOption("id")){
 					message.put("id", cmd.getOptionValue("id"));
+					this.id = cmd.getOptionValue("id");
 				}else{
 					System.out.println("please provide id with subscribe");
 					System.exit(0);
@@ -224,25 +227,7 @@ public class EzClient {
 				return message;
 			}
 			
-			if(cmd.hasOption("unsubscribe")){
-				message.put("command", "UNSUBSCRIBE");
-				if(cmd.hasOption("id")){
-					message.put("id", cmd.getOptionValue("id"));
-				}else{
-					System.out.println("please provide id with unsubscribe");
-					System.exit(0);
-				}
-				command = "unsubscribe";
-				return message;
-			}
-			
-			
-			//terminate
-			if(cmd.hasOption("terminate")){
-				message.put("command", "TERMINATE");
-				command = "terminate";
-				return message;
-			}
+	
 			//fetch command
 			if(cmd.hasOption("fetch")){
 				if(r.getUri() == ""){
@@ -407,7 +392,7 @@ public class EzClient {
 		    		
 		    		//create a listener for further command from client
 		    		if(this.listener == null){
-			    		listener = new EzClientSubscribeListener(out,debug);
+			    		listener = new EzClientSubscribeListener(out,debug,this.id);
 			    		listener.start();
 			    	}
 		    		

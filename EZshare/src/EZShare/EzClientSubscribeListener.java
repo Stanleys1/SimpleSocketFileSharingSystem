@@ -4,6 +4,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Stack;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -25,6 +26,7 @@ public class EzClientSubscribeListener extends Thread {
 	private boolean finished = false;
 	private boolean debug;
 	private Scanner scn;
+	private Stack<String> stack;
 	
 	/**
 	 * Constructor 
@@ -32,23 +34,28 @@ public class EzClientSubscribeListener extends Thread {
 	 * @param out the output stream connected to server
 	 * @param debug debug (print outgoing messages)
 	 */
-	EzClientSubscribeListener(DataOutputStream out,boolean debug){
+	EzClientSubscribeListener(DataOutputStream out,boolean debug, String id){
 		this.out= out;
 		this.debug = debug;
 		this.scn = new Scanner(System.in);
+		this.stack = new Stack<String>();
+		System.out.println(id);
+		stack.push(id);
 	}
 	
 	public void run(){
 		
 		
 		//ask for more commands
-		System.out.println("\n\n\nThis subscribe accept multiple subscriptions in one connection");
-		System.out.println("acceptable commands are :");
-		System.out.println("-subscribe -id <id> + any template variables like name, tags,etc." );
-		System.out.println("all additional subscribe will not be relayed, add -relay if needed");
-		System.out.println("-unsubscribe -id <id> will unsubscribe that specific id");
-		System.out.println("<ENTER> or -terminate to close all subscription");
-		System.out.println("enter -help if you need help\n\n");
+		System.out.println("\n\n\nThis subscribe connection accept multiple subscriptions in one connection");
+		System.out.println("acceptable commands are :\n ");
+		System.out.println("1. \t-subscribe -id <id> + any template variables like name, tags,etc."
+				+ "\n\t\t(ONLY WORKS ON SERVERS THAT ACCEPTS MULTI-SUB)" );
+		System.out.println("\t\tAll additional subscribe will not be relayed, add -relay if needed");
+		System.out.println("2. \t-unsubscribe -id <id> will unsubscribe that specific id");
+		System.out.println("3. \t<ENTER> to unsubscribe last subscription");
+		System.out.println("4. \t-terminate to close all subscription (ONLY WORKS ON SERVERS THAT ACCEPTS TERMINATE)");
+		System.out.println("5. \tenter -help if you need help\n\n");
 		
 		//while it is not finished
 		while(!finished){
@@ -61,7 +68,8 @@ public class EzClientSubscribeListener extends Thread {
 				//TODO
 				//CHECK VALIDITY OF LINE
 			if (line.isEmpty()){
-				String arg = "-terminate";
+				String arg = "-unsubscribe -id "+stack.pop();
+				System.out.println(arg);
 				args = arg.split(" ");
 			}else{
 				//split the line into tokens
@@ -89,12 +97,10 @@ public class EzClientSubscribeListener extends Thread {
 					e.printStackTrace();
 				}
 				
-				//if message = TERMINATE break the loop and completes the thread
-				if(message.containsKey("command")){
-					if(message.get("command").equals("TERMINATE")){
-						break;
-					}
-				}
+			}
+			
+			if(stack.empty()){
+				break;
 			}
 			
 		}
@@ -128,6 +134,7 @@ public class EzClientSubscribeListener extends Thread {
 				message.put("relay", relay);
 				if(cmd.hasOption("id")){
 					message.put("id", cmd.getOptionValue("id"));
+					stack.push(cmd.getOptionValue("id"));
 				}else{
 					System.out.println("please provide id with subscribe");
 					return null;
