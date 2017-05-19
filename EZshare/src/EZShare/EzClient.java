@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
 import org.json.simple.*;
 import org.json.simple.parser.JSONParser;
 
@@ -280,11 +283,14 @@ public class EzClient {
 	public ArrayList<String> run() throws IOException, NullPointerException {
 		String message = generate_message(args).toJSONString();
 		Socket s = null;
+		//SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+		//SSLSocket s;
 	    ArrayList<String> datas = new ArrayList<String>();
         
 		
 		try{
 		    s = new Socket(hostname,port);  
+			//s = (SSLSocket) sslsocketfactory.createSocket(hostname,port);
 		    if(timeout){
 		    	s.setSoTimeout(TIMEOUT);
 		    }
