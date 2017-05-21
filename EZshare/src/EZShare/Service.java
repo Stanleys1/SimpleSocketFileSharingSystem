@@ -146,6 +146,12 @@ public class Service extends Thread{
 			
 		}catch(IOException e){
 			System.out.println("client disconnected");
+			this.server.removeThread(this);
+			try {
+				this.clientSocket.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		} catch (ParseException e) {
 			e.printStackTrace();
 		} catch (org.json.simple.parser.ParseException e) {
