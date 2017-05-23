@@ -13,9 +13,6 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.net.ServerSocketFactory;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -41,7 +38,6 @@ public class EzServer implements Runnable {
 	
 	//records of all server records to be exchanged
 	private ArrayList<String> serverRecords;
-	//private ArrayList<String> serverRecords;
 	
 	//default exchange time
 	public static final int DEFAULTTIME = 600000;
@@ -52,7 +48,6 @@ public class EzServer implements Runnable {
 	public static final int DEFAULTSECRETLENGTH = 25;
 	
 	public static final int DEFAULTPORT = 3780;
-	public static final int DEFAULT_SECURE_PORT=3781;
 	
 	public static final int DEFAULTVARIABLELENGTH = 10;
 	private int exchangetime;
@@ -63,13 +58,11 @@ public class EzServer implements Runnable {
 	private String host;
 	private String secret;
 	private ServerSocket listen;
-	private SSLServerSocket listen_secure_connection;
 	private Options options;
 	private boolean debug = false;
 	private String[] args;
 	private HashMap<String,Date> blockedIP;
 	private HelpFormatter formatter;
-	private boolean secureConnection=false;
 	
 	private ArrayList<Service> subscribeThreads;
 	/**
@@ -147,7 +140,7 @@ public class EzServer implements Runnable {
 		op.add(new Option("secret",true,"set the secret for server. Default will be randomised 25-35 long random string"));
 		op.add(new Option("debug",false,"debug mode"));
 		op.add(new Option("help",false,"get help on all arguments"));
-		op.add(new Option("sport",false,"flag for secure connection"));
+		
 		Options options = new Options();
 		
 		
@@ -186,13 +179,7 @@ public class EzServer implements Runnable {
 	public int getPort(){
 		return this.port;
 	}
-	/**
-	 * check it is secure connection or not.
-	 * @return secureConnection
-	 */
-	public boolean getSecure(){
-		return this.secureConnection;
-	}
+	
 	/**
 	 * return the secret of the server
 	 * @return secret
@@ -231,7 +218,7 @@ public class EzServer implements Runnable {
 			//parse args
 			System.out.println("Starting the EZShare Server");
 			cmd = parser.parse(options, args);
-
+			
 			if(cmd.hasOption("help")){
 				this.formatter.printHelp("Help", options);
 				System.exit(0);
@@ -256,30 +243,19 @@ public class EzServer implements Runnable {
 				debug = true;
 			}
 			System.out.println("debug = "+ debug);
-			//check if it is secure connection
-			if(cmd.hasOption("sport")){
-				secureConnection= true;
-			}
+			
 			//check the port number for server to listen in
 			if(cmd.hasOption("port")){
 				String portString = cmd.getOptionValue("port");
 				if(HelperFunction.IsInteger(portString)){
 					this.port = Integer.parseInt(portString);
 					System.out.println("port = " + port);
-					//3781 is the default secure port
-					if(this.port==3781){
-						secureConnection=true;
-					}
 				}else{
 					System.out.println("port number is not a number, initialization failed");
 					System.exit(0);
 				}
 			}else{
-				if(secureConnection){
-					port=DEFAULT_SECURE_PORT;
-				}else{
-					port = DEFAULTPORT;
-				}
+				port = DEFAULTPORT;
 			}
 			
 			//get the secret
@@ -329,47 +305,25 @@ public class EzServer implements Runnable {
 		
 		//schedule sync server according to the timer
 		timer.scheduleAtFixedRate(new SyncServer(this),exchangetime, exchangetime);
-		//Specify the keystore details (this can be specified as VM arguments as well)
-		//the keystore file contains an application's own certificate and private key
-		System.setProperty("javax.net.ssl.keyStore","serverKeystore/serverKs.jks");
-		//Password to access the private key from the keystore file
-		System.setProperty("javax.net.ssl.keyStorePassword","comp90015");
-		// Enable debugging to view the handshake and communication which happens between the SSLClient and the SSLServer
-		System.setProperty("javax.net.debug","all");
-
+		
+		ServerSocketFactory factory = ServerSocketFactory.getDefault();
+		
+		
 		try {
-			//Create SSL server socket
-			if(secureConnection){
-				SSLServerSocketFactory sslserversocketfactory = (SSLServerSocketFactory) SSLServerSocketFactory
-						.getDefault();
-				listen_secure_connection = (SSLServerSocket) sslserversocketfactory.createServerSocket(port);
-			}else{
-				ServerSocketFactory factory = ServerSocketFactory.getDefault();
-				//listen
-				listen = factory.createServerSocket(port);
-			}
-			System.out.println("Server connected on port " + port);
-			//System.out.println("Server connected on port " + listen.getLocalPort());
+			//listen
+			listen = factory.createServerSocket(port);
+			
+			System.out.println("Server connected on port " + listen.getLocalPort());
 			int numberOfThreads = 0;
 			boolean blocked = false;
 			while(true){
 				System.out.println("listening for connection");
-				SSLSocket clientSecureSocket=null;
-				Socket clientSocket=null;
-				//get incoming ip
-				String incomingIP =null;
-				//Accept client secure connection
-				if(secureConnection){
-					clientSecureSocket= (SSLSocket) listen_secure_connection.accept();
-					incomingIP=clientSecureSocket.getInetAddress().toString();
-				}
-				//Accept client normal connection
-				else{
-					clientSocket = listen.accept();
-					incomingIP=clientSocket.getInetAddress().toString();
-				}
-				
+				Socket clientSocket = listen.accept();
 				blocked = false;
+				
+				
+				//get incoming ip
+				String incomingIP = clientSocket.getInetAddress().toString();
 				System.out.println("connection request from "+ incomingIP);
 				
 				if(this.blockedIP.containsKey(incomingIP)){
@@ -381,11 +335,12 @@ public class EzServer implements Runnable {
 					}
 				}
 				
+				
+				
 				//reject connection if blocked
 				if(blocked){
 					System.out.println("this ip is in connection interval limit");
 					clientSocket.close();
-					clientSecureSocket.close();
 				}else{
 					//else do service on the connection
 					numberOfThreads ++;
@@ -393,26 +348,23 @@ public class EzServer implements Runnable {
 					System.out.println("threads "+ numberOfThreads+" created");
 					
 					this.blockedIP.put(incomingIP, new Date());
-					if(secureConnection){
-						Service s= new Service(clientSecureSocket,this,debug);
-					}else{
-						Service s = new Service(clientSocket,this,debug);
-					}
+				
+					Service s = new Service(clientSocket,this,debug);
 				}
+				
+				
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally{
 			try {
-				if(secureConnection){
-					listen_secure_connection.close();
-					}else{
-						listen.close();
-					}
+				listen.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
+		
+		
 	}
 	
 	
