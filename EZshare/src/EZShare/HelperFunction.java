@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 /**
  * HelperFunction class that provide useful function
  * to be used on other classes
+ * test pull
  *
  */
 public class HelperFunction {
