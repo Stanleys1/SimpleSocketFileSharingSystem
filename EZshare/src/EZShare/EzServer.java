@@ -48,13 +48,14 @@ public class EzServer implements Runnable {
 	public static final int DEFAULTSECRETLENGTH = 25;
 	
 	public static final int DEFAULTPORT = 3780;
-	
+	public static final int DEFAULTSECUREPORT=3781;
 	public static final int DEFAULTVARIABLELENGTH = 10;
 	private int exchangetime;
 	private int intervaltime;
 	private ArrayList<Resource> resources;
 	private Timer timer;
 	private int port;
+	private int securePort;
 	private String host;
 	private String secret;
 	private ServerSocket listen;
@@ -62,8 +63,9 @@ public class EzServer implements Runnable {
 	private boolean debug = false;
 	private String[] args;
 	private HashMap<String,Date> blockedIP;
+	private HashMap<String,Date> blockedSecureIP;
 	private HelpFormatter formatter;
-	
+	private Integer numberOfThread=0;
 	private ArrayList<Service> subscribeThreads;
 	/**
 	 * create new server
@@ -76,7 +78,7 @@ public class EzServer implements Runnable {
 		this.args = args;
 		serverRecords = new ArrayList<String> ();
 		blockedIP = new HashMap<String,Date>();
-		
+		blockedSecureIP= new HashMap<String,Date>();
 		this.formatter = new HelpFormatter();
 		
 		//For testing purposes
@@ -140,7 +142,7 @@ public class EzServer implements Runnable {
 		op.add(new Option("secret",true,"set the secret for server. Default will be randomised 25-35 long random string"));
 		op.add(new Option("debug",false,"debug mode"));
 		op.add(new Option("help",false,"get help on all arguments"));
-		
+		op.add(new Option("sport",true,"flag for secure connection"));
 		Options options = new Options();
 		
 		
@@ -257,7 +259,19 @@ public class EzServer implements Runnable {
 			}else{
 				port = DEFAULTPORT;
 			}
-			
+			//check the secure port number for server to listen in
+			if(cmd.hasOption("sport")){
+				String portString = cmd.getOptionValue("sport");
+				if(HelperFunction.IsInteger(portString)){
+					this.securePort = Integer.parseInt(portString);
+					System.out.println("secure port = " + securePort);
+				}else{
+					System.out.println("secure port number is not a number, initialization failed");
+					System.exit(0);
+				}
+			}else{
+				securePort = DEFAULTSECUREPORT;
+			}
 			//get the secret
 			if(cmd.hasOption("secret")){
 				this.secret = cmd.getOptionValue("secret");
@@ -305,66 +319,10 @@ public class EzServer implements Runnable {
 		
 		//schedule sync server according to the timer
 		timer.scheduleAtFixedRate(new SyncServer(this),exchangetime, exchangetime);
-		
-		ServerSocketFactory factory = ServerSocketFactory.getDefault();
-		
-		
-		try {
-			//listen
-			listen = factory.createServerSocket(port);
-			
-			System.out.println("Server connected on port " + listen.getLocalPort());
-			int numberOfThreads = 0;
-			boolean blocked = false;
-			while(true){
-				System.out.println("listening for connection");
-				Socket clientSocket = listen.accept();
-				blocked = false;
-				
-				
-				//get incoming ip
-				String incomingIP = clientSocket.getInetAddress().toString();
-				System.out.println("connection request from "+ incomingIP);
-				
-				if(this.blockedIP.containsKey(incomingIP)){
-					Date now = new Date();
-					long time_diff = now.getTime()-this.blockedIP.get(incomingIP).getTime();
-					System.out.println("time difference of " +incomingIP+" is "+time_diff);
-					if(time_diff< this.intervaltime){
-						blocked = true;
-					}
-				}
-				
-				
-				
-				//reject connection if blocked
-				if(blocked){
-					System.out.println("this ip is in connection interval limit");
-					clientSocket.close();
-				}else{
-					//else do service on the connection
-					numberOfThreads ++;
-				
-					System.out.println("threads "+ numberOfThreads+" created");
-					
-					this.blockedIP.put(incomingIP, new Date());
-				
-					Service s = new Service(clientSocket,this,debug);
-				}
-				
-				
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally{
-			try {
-				listen.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		
+		EzServerUnSecure ezServerUnSecure=new EzServerUnSecure(this);
+		EzServerSecure ezServerSecure=new EzServerSecure(this);
+		ezServerUnSecure.start();
+		ezServerSecure.start();
 	}
 	
 	
@@ -383,9 +341,40 @@ public class EzServer implements Runnable {
 	protected ArrayList<String> getServerRecord(){
 		return serverRecords;
 	}
+	/**
+	 * get the record of servers
+	 * @return serverRecords
+	 */
+	protected HashMap<String,Date> getBlockedIP(){
+		return blockedIP;
+	}
+	/**
+	 * get the record of servers
+	 * @return serverRecords
+	 */
+	protected HashMap<String,Date> getBlockedSecureIP(){
+		return blockedSecureIP;
+	}
+	/**
+	 * get the record of servers
+	 * @return serverRecords
+	 */
+	protected int getIntervalTime(){
+		return intervaltime;
+	}
 	
+	protected Integer getNumberOfThread(){
+		return numberOfThread;
+	}
 	
+	protected boolean getDebug(){
+		return debug;
+	}
 	
+	protected int getSecurePort(){
+		return securePort;
+	}
+
 	
 	/**
 	 * class of sync server that do the handling

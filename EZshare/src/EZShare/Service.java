@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.net.ssl.SSLSocket;
+
 import org.apache.commons.cli.ParseException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -24,7 +26,7 @@ import org.json.simple.parser.JSONParser;
 public class Service extends Thread{
 	//socket
 	private Socket clientSocket;
-	
+	private SSLSocket clientSecureSocket;
 	//data output in and out
 	private DataInputStream in = null;
 	private DataOutputStream out = null;
@@ -38,7 +40,7 @@ public class Service extends Thread{
 	private String channel;
 	private String ezserver;
 	private String owner;
-	
+	private boolean secureService=false;
 	//server
 	private EzServer server;
 	
@@ -75,7 +77,15 @@ public class Service extends Thread{
 		this.finished= false;
 		this.start();
 	}
-	
+	//secure connection
+		public Service(SSLSocket clientSecureSocket, EzServer server,boolean debug){
+			this.clientSecureSocket = clientSecureSocket;
+			this.server = server;
+			this.debug = debug;
+			this.finished= false;
+			this.secureService=true;
+			this.start();
+		}
 	/**
 	 * service's run method 
 	 * 
@@ -84,8 +94,15 @@ public class Service extends Thread{
 	 */
 	public void run(){
 		try{
-			in = new DataInputStream(clientSocket.getInputStream());
-			out = new DataOutputStream(clientSocket.getOutputStream());
+			//secure connection
+			if(secureService){
+				in= new DataInputStream(clientSecureSocket.getInputStream());
+				out = new DataOutputStream(clientSecureSocket.getOutputStream());
+			}else{
+				in = new DataInputStream(clientSocket.getInputStream());
+				out = new DataOutputStream(clientSocket.getOutputStream());
+			}
+			
 			
 			//as long it is not finished
 			//keep reading and sending (for asynchronous connection)
@@ -148,7 +165,11 @@ public class Service extends Thread{
 			System.out.println("client disconnected");
 			this.server.removeThread(this);
 			try {
-				this.clientSocket.close();
+				if(secureService){
+					this.clientSecureSocket.close();
+				}else{
+					this.clientSocket.close();
+				}
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
@@ -160,7 +181,11 @@ public class Service extends Thread{
 			e.printStackTrace();
 		} finally{
 			try{
-				clientSocket.close();
+				if(secureService){
+					this.clientSecureSocket.close();
+				}else{
+					this.clientSocket.close();
+				}
 			}catch(IOException e){
 				e.printStackTrace();
 			}
