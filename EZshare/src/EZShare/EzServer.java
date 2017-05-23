@@ -38,7 +38,10 @@ public class EzServer implements Runnable {
 	
 	//records of all server records to be exchanged
 	private ArrayList<String> serverRecords;
-	
+	//record secure server records
+	private ArrayList<String> secureServerRecords;
+	//record unsecure server records
+	private ArrayList<String> unSecureServerRecords;
 	//default exchange time
 	public static final int DEFAULTTIME = 600000;
 	
@@ -77,6 +80,8 @@ public class EzServer implements Runnable {
 		resources = new ArrayList<Resource>();
 		this.args = args;
 		serverRecords = new ArrayList<String> ();
+		secureServerRecords= new ArrayList<String> ();
+		unSecureServerRecords= new ArrayList<String> ();
 		blockedIP = new HashMap<String,Date>();
 		blockedSecureIP= new HashMap<String,Date>();
 		this.formatter = new HelpFormatter();
@@ -319,6 +324,7 @@ public class EzServer implements Runnable {
 		
 		//schedule sync server according to the timer
 		timer.scheduleAtFixedRate(new SyncServer(this),exchangetime, exchangetime);
+		
 		EzServerUnSecure ezServerUnSecure=new EzServerUnSecure(this);
 		EzServerSecure ezServerSecure=new EzServerSecure(this);
 		ezServerUnSecure.start();
@@ -340,6 +346,20 @@ public class EzServer implements Runnable {
 	 */
 	protected ArrayList<String> getServerRecord(){
 		return serverRecords;
+	}
+	/**
+	 * get the record of servers
+	 * @return serverRecords
+	 */
+	protected ArrayList<String> getSecureServerRecord(){
+		return secureServerRecords;
+	}
+	/**
+	 * get the record of servers
+	 * @return serverRecords
+	 */
+	protected ArrayList<String> getUnSecureServerRecord(){
+		return unSecureServerRecords;
 	}
 	/**
 	 * get the record of servers

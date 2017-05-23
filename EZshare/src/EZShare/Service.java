@@ -242,7 +242,7 @@ public class Service extends Thread{
 					this.finished = true;
 					return response ;
 				}
-				response = query(relay);
+				response = query(relay,secureService);
 				this.finished = true;
 				return response;
 			}
@@ -314,7 +314,7 @@ public class Service extends Thread{
 				}
 				
 				
-				response = exchange(serverList);
+				response = exchange(serverList,secureService);
 				this.finished= true;
 				return response;
 				
@@ -581,7 +581,7 @@ public class Service extends Thread{
 		 * @param 
 		 * @return response message for one exchange command 
 		 */
-		private ArrayList<String> exchange(String[] serverlist){
+		private ArrayList<String> exchange(String[] serverlist,boolean secure){
 			ArrayList<String> response = new ArrayList<String>();
 			ArrayList<String> addedServer = new ArrayList<String>();
 			boolean duplicate = false;
@@ -589,8 +589,13 @@ public class Service extends Thread{
 			String currentServer = server.getHostName()+":"+server.getPort();
 			String currentServer2 = "localhost"+":"+server.getPort();
 			String currentServerIP = server.getHostIP()+":"+server.getPort();
-			synchronized(server.getServerRecord()){
-				ArrayList<String> records = server.getServerRecord();
+			ArrayList<String> records=new ArrayList<String>();
+			if(secure){
+				records=server.getSecureServerRecord();
+			}else{
+				records=server.getUnSecureServerRecord();
+			}
+			synchronized(records){
 				for( int i = 0 ;i < serverlist.length;i++){
 					duplicate = false;
 					isThisServer = false;
@@ -681,7 +686,7 @@ public class Service extends Thread{
 		 *  if true, need to query the server in server records, otherwise not need
 		 * @return response message for one query command 
 		 */
-		private ArrayList<String> query(boolean relay){
+		private ArrayList<String> query(boolean relay,boolean secure){
 			ArrayList<String> response = new ArrayList<String>();
 			
 			response.add(this.generate_success_message());
@@ -705,12 +710,16 @@ public class Service extends Thread{
 					}
 				}
 			}
+			
 			//if there is a need for query relay
 			if(relay){
-				synchronized(server.getServerRecord()){
-					//get serverRecords
-					ArrayList<String> records =this.server.getServerRecord();
-					
+				ArrayList<String> records=new ArrayList<String>();
+				if(secure){
+					records=this.server.getSecureServerRecord();
+				}else{
+					records=this.server.getUnSecureServerRecord();
+				}
+				synchronized(records){	
 					//for all servers in serverRecords
 					for(int i=0 ; i<records.size();i++){
 						
@@ -736,6 +745,10 @@ public class Service extends Thread{
 							for(int j = 0 ; j<this.tagsString.length;j++){
 								b.append(" "+tagsString[j]);
 							}
+						}
+						//secure query
+						if(secure){
+							b.append(" -secure");
 						}
 						//add the arguments into the client
 						try{
