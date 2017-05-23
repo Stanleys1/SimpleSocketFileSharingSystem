@@ -9,6 +9,7 @@ public class Client {
 	public static void main (String[] args){
 		//args must be present
 		if(args.length==0){
+			
 			System.out.println("please enter one command");
 			System.exit(0);
 		}
