@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.net.ssl.SSLSocket;
+
 import org.apache.commons.cli.ParseException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -24,6 +26,7 @@ import org.json.simple.parser.JSONParser;
 public class Service extends Thread{
 	//socket
 	private Socket clientSocket;
+	private SSLSocket clientSecureSocket;
 	
 	//data output in and out
 	private DataInputStream in = null;
@@ -67,7 +70,7 @@ public class Service extends Thread{
 	public Service(){
 		super();
 	}
-	
+	//un_secure connection
 	public Service(Socket clientSocket, EzServer server,boolean debug){
 		this.clientSocket = clientSocket;
 		this.server = server;
@@ -75,7 +78,14 @@ public class Service extends Thread{
 		this.finished= false;
 		this.start();
 	}
-	
+	//secure connection
+	public Service(SSLSocket clientSecureSocket, EzServer server,boolean debug){
+		this.clientSecureSocket = clientSecureSocket;
+		this.server = server;
+		this.debug = debug;
+		this.finished= false;
+		this.start();
+	}
 	/**
 	 * service's run method 
 	 * 
@@ -84,8 +94,16 @@ public class Service extends Thread{
 	 */
 	public void run(){
 		try{
-			in = new DataInputStream(clientSocket.getInputStream());
-			out = new DataOutputStream(clientSocket.getOutputStream());
+			//secure connection
+			if(this.server.getSecure()){
+				in= new DataInputStream(clientSecureSocket.getInputStream());
+				out = new DataOutputStream(clientSecureSocket.getOutputStream());
+			}
+			//normal connection
+			else{
+				in = new DataInputStream(clientSocket.getInputStream());
+				out = new DataOutputStream(clientSocket.getOutputStream());
+			}
 			
 			//as long it is not finished
 			//keep reading and sending (for asynchronous connection)
@@ -139,19 +157,10 @@ public class Service extends Thread{
 				} }
 				
 			}
-			
-			in.close();
+  			in.close();
 			out.close();
-			
-			
 		}catch(IOException e){
 			System.out.println("client disconnected");
-			this.server.removeThread(this);
-			try {
-				this.clientSocket.close();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
 		} catch (ParseException e) {
 			e.printStackTrace();
 		} catch (org.json.simple.parser.ParseException e) {
@@ -160,7 +169,12 @@ public class Service extends Thread{
 			e.printStackTrace();
 		} finally{
 			try{
-				clientSocket.close();
+				//close socket
+				if(this.server.getSecure()){
+					clientSecureSocket.close();
+					}else{
+						clientSocket.close();
+					}
 			}catch(IOException e){
 				e.printStackTrace();
 			}
@@ -711,6 +725,11 @@ public class Service extends Thread{
 							for(int j = 0 ; j<this.tagsString.length;j++){
 								b.append(" "+tagsString[j]);
 							}
+						}
+						//Queries that originate from a client on a secure connection 
+						//will only be relayed to other servers on their secure ports.
+						if(this.server.getSecure()){
+							b.append(" -secure");
 						}
 						//add the arguments into the client
 						try{

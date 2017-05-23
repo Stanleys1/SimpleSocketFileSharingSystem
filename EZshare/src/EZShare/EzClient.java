@@ -36,6 +36,7 @@ public class EzClient {
 	private boolean query_relay= false;
 	private boolean debug;
 	private boolean timeout;
+	private boolean secure_connection=false;
 	
 	private String id;
 	
@@ -91,7 +92,7 @@ public class EzClient {
 		op.add(new Option("subscribe",false,"subscribe to server"));
 		op.add(new Option("unsubscribe",false,"unsubscribe an id to server"));
 		op.add(new Option("id", true, "id for the subscription"));
-		
+		op.add(new Option("secure", false, "id for the subscription"));
 		//TODO
 		//need to be deleted
 		op.add(new Option("terminate",false,"terminate subs"));
@@ -131,6 +132,9 @@ public class EzClient {
 			}else{
 				this.hostname = DEFAULTHOST;
 			}
+			if(cmd.hasOption("secure")){
+				secure_connection=true;
+			}
 			//if there is not server port provided by arguments, print and then end this client
 			if(cmd.hasOption("port")){
 				String portString = cmd.getOptionValue("port");
@@ -141,7 +145,11 @@ public class EzClient {
 					System.exit(0);
 				}
 			}else{
-				this.port = EzServer.DEFAULTPORT;
+				if(secure_connection){
+					this.port=EzServer.DEFAULT_SECURE_PORT;
+				}else{
+					this.port = EzServer.DEFAULTPORT;
+				}
 			}
 			//exchange command
 			if(cmd.hasOption("exchange")){
@@ -282,23 +290,56 @@ public class EzClient {
    	 */
 	public ArrayList<String> run() throws IOException, NullPointerException {
 		String message = generate_message(args).toJSONString();
+		//Create SSL socket and connect it to the remote server 
+		
+		SSLSocket secure_socket=null;
 		Socket s = null;
-		//SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-		//SSLSocket s;
 	    ArrayList<String> datas = new ArrayList<String>();
-        
+	    DataInputStream in =null;
+	    DataOutputStream out=null;
+	   //Location of the Java keystore file containing the collection of 
+		//certificates trusted by this application (trust store).
+		System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/clientKs.jks");
 		
 		try{
-		    s = new Socket(hostname,port);  
-			//s = (SSLSocket) sslsocketfactory.createSocket(hostname,port);
+			if(secure_connection){
+				SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+				secure_socket = (SSLSocket) sslsocketfactory.createSocket(hostname,port);
+			}else{
+				s = new Socket(hostname,port);
+			}
+		      
 		    if(timeout){
 		    	s.setSoTimeout(TIMEOUT);
+		    } 
+		    //check the connection is successful or not
+		    try{
+		    	//secure connection
+		    	if(secure_connection){
+		    		if(secure_socket.isConnected()){
+		    			System.out.println("Connection Established");
+		    		}
+		    	}else{
+		    		if(s.isConnected()){
+		    			System.out.println("Connection Established");
+		    		}
+		    	}
+		    }catch(NullPointerException e){
+		    	System.out.println("error information:"+e.getStackTrace());
+		    	System.out.println("cannot connect with the server plz check the arguments and restart");
+		    	System.exit(0);
 		    }
-		    System.out.println("Connection Established");
-		    //create input streams
-		    DataInputStream in = new DataInputStream( s.getInputStream());
-		    DataOutputStream out =new DataOutputStream( s.getOutputStream());
-		    
+		    //System.out.println("Connection Established");
+		    //create  input streams through secure connection
+		    if(secure_connection){
+		    	in = new DataInputStream( secure_socket.getInputStream());
+			    out =new DataOutputStream( secure_socket.getOutputStream());
+		    }
+		    //create input streams through un_secure connection
+		    else{
+		    	in = new DataInputStream( s.getInputStream());
+			    out =new DataOutputStream( s.getOutputStream());
+		    }
 		    
 		    if(debug){
 		    	 System.out.println("SENT:"+message); 
@@ -421,13 +462,16 @@ public class EzClient {
 		    	}
 		    }
 		    
-		    	//if its not the commands mentioned above, just read the datas
+		   //if its not the commands mentioned above, just read the datas
 		   }else{
 		    	datas.add(in.readUTF());
 		    }
-		    	
-		    
-		    s.close();
+		    //close scoket
+		    if(secure_connection){
+		    	secure_socket.close();
+		    	}else{
+		    		s.close();
+		    		}  
 		}catch(UnknownHostException e){
 			System.out.println("can't identify host name");
 			e.printStackTrace();
@@ -440,6 +484,7 @@ public class EzClient {
 		}
 		//print debug information
 		if(debug){
+			System.out.print("RECEIVED: ");
 			for(int i = 0 ;i <datas.size();i++){
 				System.out.println(datas.get(i));
 			}
