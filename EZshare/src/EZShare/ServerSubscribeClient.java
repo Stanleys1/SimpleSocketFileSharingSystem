@@ -51,6 +51,7 @@ public class ServerSubscribeClient extends Thread implements ServerSubscribe{
 			DataInputStream in;
 			DataOutputStream outputStream;
 			if(security){
+				System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/clientKs.jks");
 				SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 				this.secureSocket = (SSLSocket) sslsocketfactory.createSocket(host,port);
 				in = new DataInputStream(secureSocket.getInputStream());

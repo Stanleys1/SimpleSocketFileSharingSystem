@@ -30,7 +30,8 @@ public class EzServerSecure extends Thread {
 		System.setProperty("javax.net.ssl.keyStorePassword", "comp90015");
 		// Enable debugging to view the handshake and communication which
 		// happens between the SSLClient and the SSLServer
-		System.setProperty("javax.net.debug", "all");
+		
+		//System.setProperty("javax.net.debug", "all");
 		SSLServerSocketFactory sslserversocketfactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
 		try {

@@ -310,7 +310,11 @@ public class EzClient {
 			}
 		      
 		    if(timeout){
-		    	s.setSoTimeout(TIMEOUT);
+		    	if(s!= null){
+		    		s.setSoTimeout(TIMEOUT);
+		    	}else{
+		    		secure_socket.setSoTimeout(TIMEOUT);
+		    	}
 		    }
 		    System.out.println("Connection Established");
 		    //create  input streams through secure connection
