@@ -40,7 +40,6 @@ public class EzServerSecure extends Thread {
 					.createServerSocket(this.ezServer.getSecurePort());
 
 			System.out.println("Server connected on port " + listenSecureConnection.getLocalPort());
-			int numberOfThreads = 0;
 			boolean blocked = false;
 			while (true) {
 				System.out.println("listening for connection");
@@ -65,9 +64,10 @@ public class EzServerSecure extends Thread {
 					clientSecureSocket.close();
 				} else {
 					// else do service on the connection
-					synchronized (this.ezServer.getNumberOfThread()) {
-						numberOfThreads++;
-						System.out.println("threads " + numberOfThreads + " created");
+					synchronized (this.ezServer.getNumberOfThreadLock()) {
+						this.ezServer.numberOfThread++;
+						int number = this.ezServer.numberOfThread;
+						System.out.println("threads " + number + " created");
 					}
 
 					this.ezServer.getBlockedSecureIP().put(incomingIP, new Date());

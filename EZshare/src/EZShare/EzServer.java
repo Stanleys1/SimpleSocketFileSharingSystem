@@ -69,7 +69,8 @@ public class EzServer implements Runnable {
 	private HashMap<String,Date> blockedIP;
 	private HashMap<String,Date> blockedSecureIP;
 	private HelpFormatter formatter;
-	private Integer numberOfThread=0;
+	private Integer numberOfThreadLock=0;
+	public int numberOfThread=0;
 	private ArrayList<Service> subscribeThreads;
 	/**
 	 * create new server
@@ -385,8 +386,8 @@ public class EzServer implements Runnable {
 		return intervaltime;
 	}
 	
-	protected Integer getNumberOfThread(){
-		return numberOfThread;
+	protected Integer getNumberOfThreadLock(){
+		return numberOfThreadLock;
 	}
 	
 	protected boolean getDebug(){

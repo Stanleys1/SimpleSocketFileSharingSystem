@@ -54,10 +54,10 @@ public class EzServerUnSecure extends Thread {
 					clientSocket.close();
 				} else {
 					// else do service on the connection
-					synchronized (this.ezServer.getNumberOfThread()) {
-						numberOfThreads++;
-
-						System.out.println("threads " + numberOfThreads + " created");
+					synchronized (this.ezServer.getNumberOfThreadLock()) {
+						this.ezServer.numberOfThread++;
+						int number = this.ezServer.numberOfThread;
+						System.out.println("threads " + number + " created");
 					}
 
 					this.ezServer.getBlockedIP().put(incomingIP, new Date());
