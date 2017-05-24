@@ -295,8 +295,8 @@ public class EzClient {
 	    DataOutputStream out=null;
 	   //Location of the Java keystore file containing the collection of 
 		//certificates trusted by this application (trust store).
-		//System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/clientKs.jks");
-	    System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/myGreatName");
+		System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/clientKs.jks");
+	    //System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/myGreatName");
 		try{
 			if(secure_connection){
 				SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();

@@ -24,8 +24,8 @@ public class EzServerSecure extends Thread {
 		// as well)
 		// the keystore file contains an application's own certificate and
 		// private key
-		//System.setProperty("javax.net.ssl.keyStore", "serverKeystore/serverKs.jks");
-		System.setProperty("javax.net.ssl.keyStore","serverKeystore/aGreatName");
+		System.setProperty("javax.net.ssl.keyStore", "serverKeystore/serverKs.jks");
+		//System.setProperty("javax.net.ssl.keyStore","serverKeystore/aGreatName");
 		// Password to access the private key from the keystore file
 		System.setProperty("javax.net.ssl.keyStorePassword", "comp90015");
 		// Enable debugging to view the handshake and communication which
