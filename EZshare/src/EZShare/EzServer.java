@@ -36,8 +36,6 @@ import org.apache.commons.cli.ParseException;
 
 public class EzServer implements Runnable {
 	
-	//records of all server records to be exchanged
-	private ArrayList<String> serverRecords;
 	//record secure server records
 	private ArrayList<String> secureServerRecords;
 	//record unsecure server records
@@ -81,7 +79,6 @@ public class EzServer implements Runnable {
 		this.options= generateOptions();
 		resources = new ArrayList<Resource>();
 		this.args = args;
-		serverRecords = new ArrayList<String> ();
 		secureServerRecords= new ArrayList<String> ();
 		unSecureServerRecords= new ArrayList<String> ();
 		blockedIP = new HashMap<String,Date>();
@@ -347,13 +344,6 @@ public class EzServer implements Runnable {
 	 * get the record of servers
 	 * @return serverRecords
 	 */
-	protected ArrayList<String> getServerRecord(){
-		return serverRecords;
-	}
-	/**
-	 * get the record of servers
-	 * @return serverRecords
-	 */
 	protected ArrayList<String> getSecureServerRecord(){
 		return secureServerRecords;
 	}
@@ -424,7 +414,7 @@ public class EzServer implements Runnable {
 			if(this.secure){
 				records = server.getSecureServerRecord();
 			}else{
-				records = server.getServerRecord();
+				records = server.getUnSecureServerRecord();
 			}
 		    synchronized(records){
 				int record_size = records.size();

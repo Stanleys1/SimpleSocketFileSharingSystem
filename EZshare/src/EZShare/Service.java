@@ -830,7 +830,7 @@ public class Service extends Thread{
 				if(secure){
 					servers = this.server.getSecureServerRecord();
 				}else{
-					servers = this.server.getServerRecord();
+					servers = this.server.getUnSecureServerRecord();
 				}
 				for(int i = 0 ; i <servers.size();i++){
 					String server = servers.get(i);
