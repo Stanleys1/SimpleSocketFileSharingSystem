@@ -268,7 +268,7 @@ public class Service extends Thread{
 					response.add(generate_error_message("invalid resourceTemplate"));
 					return response ;
 				}
-				response = subscribe(relay,id);
+				response = subscribe(relay,id,secureService);
 				return response;
 			}
 			
@@ -626,7 +626,7 @@ public class Service extends Thread{
 					}				
 				}
 			response.add(generate_success_message());
-			this.server.notifyThreads_Server(addedServer);
+			this.server.notifyThreads_Server(addedServer,secure);
 			return response;
 		}
 		
@@ -783,7 +783,7 @@ public class Service extends Thread{
 			return response;
 		}
 		
-		private ArrayList<String> subscribe(boolean relay, String id){
+		private ArrayList<String> subscribe(boolean relay, String id,boolean secure){
 			
 			ArrayList<String> response = new ArrayList<String>();
 			JSONObject initialResponse = new JSONObject();
@@ -826,11 +826,16 @@ public class Service extends Thread{
 			subthreads.add(s);
 			
 			if(relay){
-				ArrayList<String> servers = this.server.getServerRecord();
+				ArrayList<String> servers;
+				if(secure){
+					servers = this.server.getSecureServerRecord();
+				}else{
+					servers = this.server.getServerRecord();
+				}
 				for(int i = 0 ; i <servers.size();i++){
 					String server = servers.get(i);
 					ServerSubscribeClient client = new ServerSubscribeClient(server,debug
-							,template,id,this.out);
+							,template,id,this.out,secure);
 					client.start();
 					subthreads.add(client);
 				}
@@ -1028,7 +1033,7 @@ public class Service extends Thread{
 			}
 		}
 		
-		public void checkServer(ArrayList<String> servers){
+		public void checkServer(ArrayList<String> servers,boolean secure){
 			Iterator iter = this.subscribeIDs.entrySet().iterator();
 			while(iter.hasNext()){
 				Map.Entry pair = (Map.Entry)iter.next();
@@ -1046,11 +1051,11 @@ public class Service extends Thread{
 					}
 				}
 				
-				if(relay){
+				if(relay && secure == this.secureService){
 					ArrayList<ServerSubscribe> threads = this.subscribeIDs.get(id);
 					for(int i = 0 ; i< servers.size();i++){
 						ServerSubscribeClient client = new ServerSubscribeClient(servers.get(i),
-								debug,template,id,this.out);
+								debug,template,id,this.out,secure);
 						client.start();
 						threads.add(client);
 					}

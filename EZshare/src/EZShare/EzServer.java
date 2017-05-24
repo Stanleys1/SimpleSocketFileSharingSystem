@@ -57,6 +57,7 @@ public class EzServer implements Runnable {
 	private int intervaltime;
 	private ArrayList<Resource> resources;
 	private Timer timer;
+	private Timer secureTimer;
 	private int port;
 	private int securePort;
 	private String host;
@@ -91,6 +92,7 @@ public class EzServer implements Runnable {
 		//serverRecords.add("localhost:10000");
 		
 		timer = new Timer();
+		this.secureTimer = new Timer();
 		this.subscribeThreads = new ArrayList<Service>();
 		
 	}
@@ -129,10 +131,10 @@ public class EzServer implements Runnable {
 		}
 	}
 	
-	public void notifyThreads_Server(ArrayList<String> servers ){
+	public void notifyThreads_Server(ArrayList<String> servers,boolean secure ){
 		for(int i = 0 ; i<this.subscribeThreads.size();i++){
 			Service s = this.subscribeThreads.get(i);
-			s.checkServer(servers);
+			s.checkServer(servers,secure);
 		}
 	}
 	
@@ -323,8 +325,8 @@ public class EzServer implements Runnable {
 		}
 		
 		//schedule sync server according to the timer
-		timer.scheduleAtFixedRate(new SyncServer(this),exchangetime, exchangetime);
-		
+		timer.scheduleAtFixedRate(new SyncServer(this,false),exchangetime, exchangetime);
+		this.secureTimer.scheduleAtFixedRate(new SyncServer(this,true), exchangetime,exchangetime);
 		EzServerUnSecure ezServerUnSecure=new EzServerUnSecure(this);
 		EzServerSecure ezServerSecure=new EzServerSecure(this);
 		ezServerUnSecure.start();
@@ -404,20 +406,26 @@ public class EzServer implements Runnable {
 	class SyncServer extends TimerTask{
 		private EzServer server;
 		private Random rand;
+		private boolean secure;
 		
 		/**
 		 * constructor
 		 * @param server the server that the timer needs to work in
 		 */
-		public SyncServer(EzServer server){
+		public SyncServer(EzServer server, boolean secure){
 			this.server = server;
 			rand = new Random();
-			
+			this.secure = secure;
 		}
 		
 		public void run(){
-		    synchronized(server.getServerRecord()){
-		    	ArrayList<String> records =server.getServerRecord();
+			ArrayList<String> records;
+			if(this.secure){
+				records = server.getSecureServerRecord();
+			}else{
+				records = server.getServerRecord();
+			}
+		    synchronized(records){
 				int record_size = records.size();
 				
 				//if record_size not empty
@@ -436,12 +444,14 @@ public class EzServer implements Runnable {
 						b.append(",");
 						b.append(records.get(i));
 					}
+					if(secure){
+						b.append(" -secure");
+					}
 					//System.out.println(b.toString());
 					
 					//create argument for client
 					String argument = "-exchange -port "+addr[1]+" -host "+addr[0]+" -debug "+"-servers "+b;
 					//System.out.println(argument);
-					
 					
 					String[] arguments = argument.split(" ");
 					try{

@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -14,16 +17,18 @@ public class ServerSubscribeClient extends Thread implements ServerSubscribe{
 	private int port;
 	private String host;
 	private int resultSize = 0;
-	private Socket s;
+	private Socket s = null;
+	private SSLSocket secureSocket= null;
 	private boolean finished = false;
 	private boolean debug;
+	private boolean security;
 	private Resource template;
 	private String id;
 	private JSONParser parser = new JSONParser();
 	private DataOutputStream out;
 	
 	ServerSubscribeClient(String server,boolean debug, Resource template,String id
-			,DataOutputStream out){
+			,DataOutputStream out,boolean security){
 		String[] tokens = server.split(":");
 		this.host = tokens[0];
 		if(HelperFunction.IsInteger(tokens[1])){
@@ -32,20 +37,31 @@ public class ServerSubscribeClient extends Thread implements ServerSubscribe{
 			System.out.println("wrong port format given");
 			this.finished = true;
 		}
-		this.s = null;
 		this.debug = debug;
 		this.template = template;
 		this.id = id;
 		this.out = out;
+		this.security = security;
 	}
 	
 	@Override
 	public void run(){
 		try {
-			s = new Socket(this.host,this.port);
 			
-			DataInputStream in = new DataInputStream( s.getInputStream());
-		    DataOutputStream outputStream =new DataOutputStream( s.getOutputStream());
+			DataInputStream in;
+			DataOutputStream outputStream;
+			if(security){
+				SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+				this.secureSocket = (SSLSocket) sslsocketfactory.createSocket(host,port);
+				in = new DataInputStream(secureSocket.getInputStream());
+				outputStream = new DataOutputStream(secureSocket.getOutputStream());
+			}else{
+				s = new Socket(this.host,this.port);
+				in = new DataInputStream( s.getInputStream());
+			    outputStream =new DataOutputStream( s.getOutputStream());
+			}
+			
+			
 		    
 		    String message = generate_message().toJSONString();
 		    
@@ -105,8 +121,14 @@ public class ServerSubscribeClient extends Thread implements ServerSubscribe{
 	@Override
 	public void stopThread() {
 		try {
-			this.finished = true;
-			s.close();
+			
+			if(this.s != null){
+				s.close();
+			}else{
+				this.secureSocket.close();
+				this.finished = true;
+			}
+			
 		} catch (IOException e) {
 			//closed socket will always throw exception due to read block
 			//thus ignore exception
