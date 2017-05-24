@@ -145,7 +145,11 @@ public class EzClient {
 					System.exit(0);
 				}
 			}else{
+				if(this.secure_connection){
+					this.port= EzServer.DEFAULTSECUREPORT;
+				}else{
 					this.port = EzServer.DEFAULTPORT;
+				}
 			}
 			//exchange command
 			if(cmd.hasOption("exchange")){
