@@ -73,8 +73,6 @@ public class ServerSubscribeClient extends Thread implements ServerSubscribe{
 		    outputStream.writeUTF(message);
 		    
 		    
-		    //get initial response;
-			System.out.println("here");
 		    JSONObject response = (JSONObject) parser.parse(in.readUTF());
 		    System.out.println(response.toJSONString());
 		    	//if response succeeds
@@ -104,16 +102,12 @@ public class ServerSubscribeClient extends Thread implements ServerSubscribe{
 			}
 		} catch (UnknownHostException e) {
 			finished = true;
-			e.printStackTrace();
 		} catch (IOException e) {
 			finished = true;
-			e.printStackTrace();
 		} catch (NullPointerException e){
 			finished = true;
-			e.printStackTrace();
 		} catch (ParseException e) {
 			finished = true;
-			e.printStackTrace();
 		}
 	}
 	
@@ -138,7 +132,6 @@ public class ServerSubscribeClient extends Thread implements ServerSubscribe{
 			//closed socket will always throw exception due to read block
 			//thus ignore exception
 			this.finished = true;
-			e.printStackTrace();
 		}
 	}
 	

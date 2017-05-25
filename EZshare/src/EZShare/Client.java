@@ -32,7 +32,6 @@ public class Client {
 			e.printStackTrace();
 		}catch(IOException e){
 			System.out.println("IO problems in client found");
-			e.printStackTrace();
 		}
 		
 		
