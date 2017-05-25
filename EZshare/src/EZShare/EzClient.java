@@ -299,7 +299,16 @@ public class EzClient {
 	    DataOutputStream out=null;
 	   //Location of the Java keystore file containing the collection of 
 		//certificates trusted by this application (trust store).
+	    System.setProperty("javax.net.ssl.keyStore", "clientKeystore/clientKs.jks");
+		//System.setProperty("javax.net.ssl.keyStore","serverKeystore/aGreatName");
+		// Password to access the private key from the keystore file
+		System.setProperty("javax.net.ssl.keyStorePassword", "comp90015");
+		
+		
+		//TODO SHOULD BE CHANGED TO ROOTCA, BUT JAVA DOES NOT ACCEPT .pem
 		System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/clientKs.jks");
+		
+		
 	    //System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/myGreatName");
 		try{
 			if(secure_connection){

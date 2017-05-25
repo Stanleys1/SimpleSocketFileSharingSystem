@@ -31,7 +31,10 @@ public class EzServerSecure extends Thread {
 		// Enable debugging to view the handshake and communication which
 		// happens between the SSLClient and the SSLServer
 		
-		//System.setProperty("javax.net.debug", "all");
+		
+		//TODO SHOULD BE CHANGE TO ROOTCA.pem , BUT JAVA DOES NOT ACCEPT .pem
+		System.setProperty("javax.net.ssl.trustStore", "serverKeystore/serverKs.jks");
+		System.setProperty("javax.net.debug", "all");
 		SSLServerSocketFactory sslserversocketfactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
 		try {
@@ -45,6 +48,7 @@ public class EzServerSecure extends Thread {
 				System.out.println("listening for connection");
 				SSLSocket clientSecureSocket = (SSLSocket) listenSecureConnection.accept();
 				blocked = false;
+				clientSecureSocket.setWantClientAuth(true);
 
 				// get incoming ip
 				String incomingIP = clientSecureSocket.getInetAddress().toString();
