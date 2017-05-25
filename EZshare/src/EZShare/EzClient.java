@@ -305,8 +305,7 @@ public class EzClient {
 		System.setProperty("javax.net.ssl.keyStorePassword", "comp90015");
 		
 		
-		//TODO SHOULD BE CHANGED TO ROOTCA, BUT JAVA DOES NOT ACCEPT .pem
-		System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/clientKs.jks");
+		System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/rootCA.jks");
 		
 		
 	    //System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/myGreatName");

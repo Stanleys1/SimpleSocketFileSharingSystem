@@ -32,8 +32,7 @@ public class EzServerSecure extends Thread {
 		// happens between the SSLClient and the SSLServer
 		
 		
-		//TODO SHOULD BE CHANGE TO ROOTCA.pem , BUT JAVA DOES NOT ACCEPT .pem
-		System.setProperty("javax.net.ssl.trustStore", "serverKeystore/serverKs.jks");
+		System.setProperty("javax.net.ssl.trustStore", "serverKeystore/rootCA.jks");
 		System.setProperty("javax.net.debug", "all");
 		SSLServerSocketFactory sslserversocketfactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
