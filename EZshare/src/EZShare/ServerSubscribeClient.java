@@ -74,12 +74,12 @@ public class ServerSubscribeClient extends Thread implements ServerSubscribe{
 		    
 		    
 		    JSONObject response = (JSONObject) parser.parse(in.readUTF());
-		    System.out.println(response.toJSONString());
+		    if(debug){	
+	    		System.out.println(response.toJSONString());
+	    	}
 		    	//if response succeeds
 		    if(response.get("response").equals("success")){
-		    	if(debug){	
-		    		System.out.println(response.toJSONString());
-		    	}
+		    	
 		    	while(!finished){
 		    		JSONObject next = null;
 					try {

@@ -15,7 +15,6 @@ public class EzServerSecure extends Thread {
 	private SSLServerSocket listenSecureConnection;
 
 	public EzServerSecure(EzServer ezServer) {
-		// TODO Auto-generated constructor stub
 		this.ezServer = ezServer;
 	}
 
@@ -33,7 +32,7 @@ public class EzServerSecure extends Thread {
 		
 		
 		System.setProperty("javax.net.ssl.trustStore", "serverKeystore/rootCA.jks");
-		System.setProperty("javax.net.debug", "all");
+		//System.setProperty("javax.net.debug", "all");
 		SSLServerSocketFactory sslserversocketfactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
 		try {

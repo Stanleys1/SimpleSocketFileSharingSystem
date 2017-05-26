@@ -90,12 +90,8 @@ public class EzClient {
 		op.add(new Option("uri",true,"uri of the resource"));
 		op.add(new Option("help",false,"get help on all options"));
 		op.add(new Option("subscribe",false,"subscribe to server"));
-		op.add(new Option("unsubscribe",false,"unsubscribe an id to server"));
 		op.add(new Option("id", true, "id for the subscription"));
 		op.add(new Option("secure", false, "id for the subscription"));
-		//TODO
-		//need to be deleted
-		op.add(new Option("terminate",false,"terminate subs"));
 		
 		Options options = new Options();
 		for(int i = 0 ; i < op.size();i++){
@@ -443,7 +439,10 @@ public class EzClient {
 		    		while(!finished){
 		    			JSONObject next = (JSONObject) parser.parse(in.readUTF());
 		    			if(next.containsKey("resultSize")){
-		    				System.out.println(next.toJSONString());
+		    				if(debug){
+		    					System.out.println(next.toJSONString());
+		    				}
+		    				datas.add(next.toJSONString());
 		    				finished = true;
 		    			}else{
 		    				if(next.containsKey("response")){
@@ -474,7 +473,6 @@ public class EzClient {
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		} catch (org.json.simple.parser.ParseException e) {
-			// TODO Auto-generated catch block
 			System.out.println("message parse failed");
 		}
 		//print debug information
@@ -567,7 +565,6 @@ public class EzClient {
      * it is invalid. 
      */
 	private boolean check_servers_invalidity(String servers) {
-		// TODO Auto-generated method stub
 		if(servers.length()==0){
 			return false;
 		}
