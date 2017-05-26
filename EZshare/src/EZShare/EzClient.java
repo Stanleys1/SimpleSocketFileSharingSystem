@@ -293,15 +293,19 @@ public class EzClient {
 	    ArrayList<String> datas = new ArrayList<String>();
 	    DataInputStream in =null;
 	    DataOutputStream out=null;
+	    
+	    HelperFunction.createFile(this.getClass(), "/clientKs.jks", "clientKs.jks");
+	    HelperFunction.createFile(this.getClass(), "/rootCA.jks", "rootCA.jks");
+		
 	   //Location of the Java keystore file containing the collection of 
 		//certificates trusted by this application (trust store).
-	    System.setProperty("javax.net.ssl.keyStore", "clientKeystore/clientKs.jks");
+	    System.setProperty("javax.net.ssl.keyStore", "clientKs.jks");
 		//System.setProperty("javax.net.ssl.keyStore","serverKeystore/aGreatName");
 		// Password to access the private key from the keystore file
 		System.setProperty("javax.net.ssl.keyStorePassword", "comp90015");
 		
 		
-		System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/rootCA.jks");
+		System.setProperty("javax.net.ssl.trustStore", "rootCA.jks");
 		
 		
 	    //System.setProperty("javax.net.ssl.trustStore", "clientKeyStore/myGreatName");

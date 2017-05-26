@@ -1,6 +1,11 @@
 package EZShare;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
@@ -23,7 +28,10 @@ public class EzServerSecure extends Thread {
 		// as well)
 		// the keystore file contains an application's own certificate and
 		// private key
-		System.setProperty("javax.net.ssl.keyStore", "serverKeystore/serverKs.jks");
+		HelperFunction.createFile(this.getClass(), "/serverKs.jks", "serverKs.jks");
+		
+		HelperFunction.createFile(this.getClass(), "/rootCA.jks", "rootCA.jks");
+		System.setProperty("javax.net.ssl.keyStore", "serverKs.jks");
 		//System.setProperty("javax.net.ssl.keyStore","serverKeystore/aGreatName");
 		// Password to access the private key from the keystore file
 		System.setProperty("javax.net.ssl.keyStorePassword", "comp90015");
@@ -31,8 +39,8 @@ public class EzServerSecure extends Thread {
 		// happens between the SSLClient and the SSLServer
 		
 		
-		System.setProperty("javax.net.ssl.trustStore", "serverKeystore/rootCA.jks");
-		//System.setProperty("javax.net.debug", "all");
+		System.setProperty("javax.net.ssl.trustStore", "rootCA.jks");
+		System.setProperty("javax.net.debug", "all");
 		SSLServerSocketFactory sslserversocketfactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
 		try {

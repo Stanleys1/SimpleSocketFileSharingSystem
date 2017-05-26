@@ -1,6 +1,11 @@
 package EZShare;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -149,5 +154,42 @@ public class HelperFunction {
 			fileName2 = new StringBuilder(fileName).reverse().toString();
 			return fileName2;
 		}
+	
+	public static void createFile (Class c,String path1, String path2){
+		
+		
+		try {
+			
+			InputStream in= c.getResourceAsStream(path1);
+			if(in == null){
+				System.out.println("fail to read path");
+			}
+		
+			OutputStream out =
+			        new FileOutputStream(path2);
+			
+			int read = 0 ; 
+			byte[] bytes = new byte[1024];
+			while ((read = in.read(bytes)) != -1) {
+				out.write(bytes, 0, read);
+			}
+			
+			if( in != null){
+				in.close();
+			}
+			
+			if(out != null){
+				out.close();
+			}
+			
+			
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 }
