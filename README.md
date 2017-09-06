@@ -1,8 +1,3 @@
-LULLLLLLLLLL
+This is simple Socket Server-Client File sharing System.
 
-GOT BEANED SON!
-
-
-by 
-
-LEILEI GU
+Utilised self-created certificates for https connection.
